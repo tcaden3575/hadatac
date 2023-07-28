@@ -4,6 +4,7 @@ import be.objectify.deadbolt.java.actions.Group;
 import be.objectify.deadbolt.java.actions.Restrict;
 import com.typesafe.config.ConfigFactory;
 import module.DatabaseExecutionContext;
+import org.apache.commons.lang.StringUtils;
 import org.hadatac.Constants;
 import org.hadatac.annotations.SearchActivityAnnotation;
 import org.hadatac.console.controllers.Application;
@@ -17,6 +18,7 @@ import org.hadatac.entity.pojo.Measurement;
 import org.hadatac.entity.pojo.ObjectCollection;
 import org.hadatac.entity.pojo.SPARQLUtilsFacetSearch;
 import org.hadatac.entity.pojo.User;
+import org.hadatac.utils.ConfigProp;
 import org.pac4j.play.java.Secure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +51,8 @@ public class DataAcquisitionSearch extends Controller {
     public static FacetsWithCategories range_facets = new FacetsWithCategories();
     public static FacetsWithCategories cluster_facets = new FacetsWithCategories();
     public static SpatialQueryResults query_results = new SpatialQueryResults();
+
+    Map<String, String> studyFacetQueries;
 
     // looks like no one is calling this
     public static List<String> getPermissions(String permissions) {
@@ -318,23 +322,44 @@ public class DataAcquisitionSearch extends Controller {
 
     @Secure (authorizers = Constants.DATA_OWNER_ROLE)
     public Result downloadAlignment(Http.Request request) {
+        System.out.println("DataAcquisitionSearch.downloadAlignment : request=[" + request + "]");
         String ownerUri = getOwnerUri(request);
         String email = getUserEmail(request);
 
         String facets = "";
+        String studyId = "";
         String objectType = "";
         String categoricalValues = "";
         String timeResolution = "";
         String sameValueSelection = "";
+        boolean renameFiles = false;
 
         List<String> selectedFields = new LinkedList<String>();
         Map<String, String[]> name_map = request.body().asFormUrlEncoded();
+        System.out.println("DataAcquisitionSearch.downloadAlignment : name_map=[" + name_map + "]");
+
         if (name_map != null) {
             if (name_map.get("facets") != null) {
                 facets = name_map.get("facets")[0];
-            } else {
+            }
+
+            //System.out.println("DataAcquisitionSearch.downloadAlignment : name_map=[" + name_map + "]");
+            if (name_map.get("downloadSrc") != null) {
+                String downloadSrc = name_map.get("downloadSrc")[0].toString();
+                if (downloadSrc.equals("studypage")) {
+                    if (name_map.get("studyId") != null) {
+                        studyId = name_map.get("studyId")[0].toString();
+                        System.out.println("DataAcquisitionSearch.downloadAlignment : studyId=[" + studyId + "]");
+                        //facets = ConfigProp.getFacetedSearhQuery("STD-"+studyId);
+                        facets = getStudyFacetQuery("STD-"+studyId);
+                    }
+                }
+            }
+
+            if(StringUtils.isBlank(facets)) {
                 System.out.println("DataAcquisitionSearch.downloadAlignment - Warning: missing facets information in form.");
             }
+
             if (name_map.get("selObjectType") != null) {
                 objectType = name_map.get("selObjectType")[0].toString();
             }
@@ -346,6 +371,9 @@ public class DataAcquisitionSearch extends Controller {
             }
             if (name_map.get("selDupOpt") != null) {
                 sameValueSelection = name_map.get("selDupOpt")[0].toString();
+            }
+            if (name_map.get("renameFiles") != null && name_map.get("renameFiles")[0].toString().equals("true")) {
+                renameFiles = true;
             }
         }
 
@@ -359,6 +387,7 @@ public class DataAcquisitionSearch extends Controller {
         final String finalFacets = facets;
         final String categoricalOption = categoricalValues;
         final String timeOption = timeResolution;
+        final boolean finalRenameFiles = renameFiles;
         final boolean keepSameValue = "eliminateDuplication".equalsIgnoreCase(sameValueSelection) ? false : true;
         //System.out.println("Object type inside alignment: " + objectType);
 
@@ -367,7 +396,7 @@ public class DataAcquisitionSearch extends Controller {
         if (objectType.equals(Downloader.ALIGNMENT_SUBJECT)) {
             //System.out.println("Selected subject alignment");
             promiseOfResult = CompletableFuture.supplyAsync(() -> Downloader.generateCSVFileBySubjectAlignment(
-                    ownerUri, finalFacets, email, Measurement.SUMMARY_TYPE_NONE, categoricalOption, keepSameValue, null),
+                    ownerUri, finalFacets, email, Measurement.SUMMARY_TYPE_NONE, categoricalOption, finalRenameFiles, keepSameValue, null),
                     databaseExecutionContext);
         } else if (objectType.equals(Downloader.ALIGNMENT_TIME)) {
             //System.out.println("Selected time alignment");
@@ -398,6 +427,7 @@ public class DataAcquisitionSearch extends Controller {
         String facets = "";
         String selSummaryType = "";
         String nonCategoricalVariables = "";
+        boolean renameFiles = false;
 
         List<String> selectedFields = new LinkedList<String>();
         Map<String, String[]> name_map = request.body().asFormUrlEncoded();
@@ -410,6 +440,9 @@ public class DataAcquisitionSearch extends Controller {
             }
             if (name_map.get("selNonCatVariable") != null) {
                 nonCategoricalVariables = name_map.get("selNonCatVariable")[0].toString();
+            }
+            if (name_map.get("renameFiles") != null && name_map.get("renameFiles")[0].toString().equals("true")) {
+                renameFiles = true;
             }
         }
 
@@ -424,6 +457,7 @@ public class DataAcquisitionSearch extends Controller {
         final String finalFacets = facets;
         final String summaryType = selSummaryType;
         final String categoricalOption = nonCategoricalVariables;
+        final boolean finalRenameFiles = renameFiles;
 
         CompletionStage<Integer> promiseOfResult = null;
         long currentTime = System.currentTimeMillis();
@@ -431,7 +465,7 @@ public class DataAcquisitionSearch extends Controller {
         if (selSummaryType.equals(Measurement.SUMMARY_TYPE_SUBGROUP)) {
             // for TYPE_SUBGROUP, keepSameValue is set to 'false'
             promiseOfResult = CompletableFuture.supplyAsync(() -> Downloader.generateCSVFileBySubjectAlignment(
-                    ownerUri, finalFacets, email, summaryType, categoricalOption, false, null),
+                    ownerUri, finalFacets, email, summaryType, categoricalOption, finalRenameFiles, false, null),
                     databaseExecutionContext);
 
             promiseOfResult.whenComplete(
@@ -572,5 +606,17 @@ public class DataAcquisitionSearch extends Controller {
         return preferences(fs, fo, fec, fu, ft, fsp, fp, request);
     }
 
+    private String getStudyFacetQuery(String studyId) {
+        if(studyFacetQueries==null)
+        {
+            studyFacetQueries = new HashMap<String, String>();
 
+            studyFacetQueries.put("STD-2016-34","{\"facetsEC\":[],\"facetsS\":[{\"id\":\"http://hadatac.org/kb/hhear#STD-2016-34\",\"study_uri_str\":\"http://hadatac.org/kb/hhear#STD-2016-34\",\"children\":[{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-34-Lab-Creatinine\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-34-Lab-Creatinine\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-34-Lab-Metals\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-34-Lab-Metals\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-34-PD-DemoHealth\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-34-PD-DemoHealth\"}]}],\"facetsOC\":[],\"facetsU\":[],\"facetsT\":[],\"facetsPI\":[]}");
+            studyFacetQueries.put("STD-2016-1431","{\"facetsEC\":[],\"facetsS\":[{\"id\":\"http://hadatac.org/kb/hhear#STD-2016-1431\",\"study_uri_str\":\"http://hadatac.org/kb/hhear#STD-2016-1431\",\"children\":[{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-1431-Lab-PAH-PSAMPLES\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-1431-Lab-PAH-PSAMPLES\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-1431-Lab-PAH-SSAMPLES\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-1431-Lab-PAH-SSAMPLES\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Anthropom-P01\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Anthropom-P01\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Anthropom-P20\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Anthropom-P20\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Demo\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Demo\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Exposures-P20\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Exposures-P20\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Metabolic-P01\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Metabolic-P01\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Metabolic-P20\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Metabolic-P20\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-SpecGrav-P01\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-SpecGrav-P01\"}]}],\"facetsOC\":[],\"facetsU\":[],\"facetsT\":[],\"facetsPI\":[]}");
+            studyFacetQueries.put("STD-2017-1762","{\"facetsEC\":[],\"facetsS\":[{\"id\":\"http://hadatac.org/kb/hhear#STD-2017-1762\",\"study_uri_str\":\"http://hadatac.org/kb/hhear#STD-2017-1762\",\"children\":[{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-1762-Lab-CotA\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-1762-Lab-CotA\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-1762-Lab-CotB\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-1762-Lab-CotB\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-1762-Lab-Inflam\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-1762-Lab-Inflam\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-1762-PD-DemoHealth\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-1762-PD-DemoHealth\"}]}],\"facetsOC\":[],\"facetsU\":[],\"facetsT\":[],\"facetsPI\":[]}");
+            studyFacetQueries.put("STD-2017-2121","{\"facetsEC\":[],\"facetsS\":[{\"id\":\"http://hadatac.org/kb/hhear#STD-2017-2121\",\"study_uri_str\":\"http://hadatac.org/kb/hhear#STD-2017-2121\",\"children\":[{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-Creatinine\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-Creatinine\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-Inflam\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-Inflam\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-Oxid\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-Oxid\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-Phthalates\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-Phthalates\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-UPAH\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-UPAH\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-UPEST_DAPs\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-UPEST_DAPs\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-UPEST_UPMs\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-UPEST_UPMs\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-UPHENOL_UPB\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-UPHENOL_UPB\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-2121-PD-DemoHealth\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-2121-PD-DemoHealth\"}]}],\"facetsOC\":[],\"facetsU\":[],\"facetsT\":[],\"facetsPI\":[]}");
+        }
+
+        return studyFacetQueries.get(studyId);
+    }
 }

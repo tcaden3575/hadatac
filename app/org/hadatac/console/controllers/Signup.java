@@ -5,6 +5,7 @@ import com.typesafe.config.ConfigFactory;
 import module.SecurityModule;
 import org.apache.commons.lang.RandomStringUtils;
 import org.hadatac.Constants;
+import org.hadatac.console.controllers.dataacquisitionsearch.DataAcquisitionSearch;
 import org.hadatac.console.controllers.triplestore.UserManagement;
 import org.hadatac.console.models.*;
 import org.hadatac.console.providers.*;
@@ -53,6 +54,7 @@ import static play.libs.Scala.asScala;
 import static play.mvc.Results.*;
 import static play.shaded.ahc.io.netty.util.internal.SystemPropertyUtil.get;
 import org.hadatac.console.providers.SimpleTestUsernamePasswordAuthenticator;
+import play.shaded.ahc.io.netty.util.internal.StringUtil;
 
 
 public class Signup {
@@ -341,6 +343,26 @@ public class Signup {
             System.out.println("Logging in user redirected from Third party: "+playSessionStore.getOrCreateSessionId(playWebContext));
             SysUser user = SysUser.findByEmail(formData.get().getEmail());
             application.formIndex(request,user,playSessionStore,playWebContext);
+
+            Map params = request.queryString();
+            params.forEach((K,V) -> System.out.println(K + ", value : " + V));
+            System.out.println("formData= " + formData);
+
+            String source = formData.get().getSource();
+            String studyPageRef = formData.get().getStudyPageRef();
+
+            if(!StringUtil.isNullOrEmpty(source) && !StringUtil.isNullOrEmpty(studyPageRef) && source.equals("studypage")) {
+                studyPageRef = "/" +studyPageRef+"&source="+source;
+                //System.out.println("studyPageRef= " + studyPageRef);
+                return ok (studyPageRef).addingToSession(request ,"userValidated", "yes");
+            }
+            else if(!StringUtil.isNullOrEmpty(source) && source.equals("generateDataSet")) {
+                String pageRef = "/" +studyPageRef+"&source="+source;;
+                //System.out.println("PageRef= " + pageRef);
+
+                return ok (pageRef).addingToSession(request ,"userValidated", "yes");
+            }
+
             return ok ("/hadatac").addingToSession(request ,"userValidated", "yes");
         }
         return badRequest("what happened?");

@@ -54,6 +54,10 @@ public class MyUsernamePasswordAuthProvider implements MyAuthUserIdentity{
     private String password;
     private String repeatPassword;
 
+    private String source;
+    private String studyPageRef;
+    private String studyId;
+
     private MessagesApi messagesApi;
     private Config config;
     MyService myService;
@@ -131,6 +135,22 @@ public class MyUsernamePasswordAuthProvider implements MyAuthUserIdentity{
 
     public void setRepeatPassword(String repeatPassword) {
         this.repeatPassword = repeatPassword;
+    }
+
+    public String getSource() { return source; }
+
+    public void setSource(String source) {this.source = source; }
+
+    public String getStudyPageRef() { return studyPageRef; }
+
+    public void setStudyPageRef(String studyPageRef) {this.studyPageRef = studyPageRef;}
+
+    public String getStudyId() {
+        return studyId;
+    }
+
+    public void setStudyId(String studyId) {
+        this.studyId = studyId;
     }
 
     public String validate() {

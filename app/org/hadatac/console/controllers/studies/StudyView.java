@@ -8,9 +8,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.typesafe.config.ConfigFactory;
 import org.hadatac.Constants;
 import org.hadatac.console.controllers.Application;
+import org.hadatac.console.providers.MyUsernamePasswordAuthProvider;
 import org.pac4j.play.java.Secure;
+import play.data.Form;
+import play.data.FormFactory;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -79,8 +83,26 @@ public class StudyView extends Controller {
         if (study == null) {
             return badRequest("ViewStudy: [ERROR] Could not find any study with following URI: [" + study_uri + "]");
         }
-        Agent agent = study.getAgent();
+       Agent agent = study.getAgent();
         Agent institution = study.getInstitution();
+
+        //using config
+        String fullImgPrefix = ConfigFactory.load().getString("hadatac.shiny_dashboards.fullImgPrefix");
+        StringBuilder shinyAppUrl = new StringBuilder();
+        shinyAppUrl.append(fullImgPrefix);
+
+        //to add the Study
+        shinyAppUrl.append(study.getId());
+
+        System.out.println("shinyAppUrl: [" + shinyAppUrl.toString() + "]");
+
+        String source = "studypage";
+        Map<String, String[]> params = getRequestParameters( request);
+        System.out.println("params: "+ params);
+        if(params.containsKey("source")) {
+            System.out.println("params.get(source): "+ params.get("source"));
+            source = params.get("source")[0];
+        }
 
         ObjectCollection oc = null;
         if (oc_uri != null && !oc_uri.equals("")) {
@@ -94,11 +116,21 @@ public class StudyView extends Controller {
             total = StudyObject.getNumberStudyObjectsByCollection(oc_uri);
         }
 
-        return ok(studyView.render(graph.getTreeQueryResult().replace("\n", " "), study, agent, institution, oc, objects, page, total,application.getUserEmail(request)));
+        return ok(studyView.render(graph.getTreeQueryResult().replace("\n", " "), study, agent, institution, oc, objects, page, total,application.getUserEmail(request), source, shinyAppUrl.toString()));
     }
 
     @Secure(authorizers = Constants.DATA_OWNER_ROLE)
     public Result postIndex(String study_uri, String oc_uri, int page, Http.Request request) {
         return index(study_uri, oc_uri, page, request);
     }
+
+    public Map<String, String[]> getRequestParameters(Http.Request request) {
+        final Map<String, String[]> parameters = new HashMap<>();
+        final Map<String, String[]> urlParameters = request.queryString();
+        if (urlParameters != null) {
+            parameters.putAll(urlParameters);
+        }
+        return parameters;
+    }
+
 }
