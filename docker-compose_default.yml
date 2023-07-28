@@ -92,6 +92,8 @@ services:
         depends_on:
             - fuseki
             - solr
+
+
     shinyproxy:
         image: tetherlessworld/hadatac-shinyproxy:latest
         container_name: hadatac_shinyproxy
@@ -100,7 +102,7 @@ services:
         environment:
             - "WORK_DIR=${PWD}"
         networks:
-            hadatac:
+            shiny_proxy_network:
                 aliases:
                     - shinyproxy
         volumes:
@@ -116,7 +118,7 @@ services:
         container_name: 2016-34
         build: ./shinyapps/dashboard/2016-34
         networks:
-            hadatac:
+            shiny_proxy_network:
                 aliases:
                     - dashboard-2016-34
 
@@ -125,7 +127,7 @@ services:
         container_name: 2020-0000
         build: ./shinyapps/dashboard/2020-0000
         networks:
-            hadatac:
+            shiny_proxy_network:
                 aliases:
                     - dashboard-2020-0000
 
@@ -134,7 +136,7 @@ services:
         container_name: 2017-1762
         build: ./shinyapps/dashboard/2017-1762
         networks:
-            hadatac:
+            shiny_proxy_network:
                 aliases:
                     - dashboard-2017-1762
 
@@ -143,7 +145,7 @@ services:
         container_name: 2016-1431
         build: ./shinyapps/dashboard/2016-1431
         networks:
-            hadatac:
+            shiny_proxy_network:
                 aliases:
                     - dashboard-2016-1431
 
@@ -152,7 +154,7 @@ services:
         container_name: 2017-2121
         build: ./shinyapps/dashboard/2017-2121
         networks:
-            hadatac:
+            shiny_proxy_network:
                 aliases:
                     - dashboard-2017-2121
 
@@ -164,3 +166,4 @@ volumes:
 
 networks:
     hadatac:
+    shiny_proxy_network:

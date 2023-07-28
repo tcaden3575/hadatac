@@ -1,22 +1,24 @@
 proxy:
   title: HADatAc ShinyProxy
   port: 8080
-  hide-navbar: false
+  hide-navbar: true
   template-path: ./template
   container-log-path: /container-logs
   docker:
     internal-networking: true
-    container-network: "hadatac_hadatac"
+    container-network: "hadatac_newtwork"
   specs:
-  - id: test-app
-    container-cmd: ["R", "-e", "shiny::runApp('/home/app', host = '0.0.0.0', port = 3838)"]
-    container-image: tetherlessworld/hadatac-r-test-app
+  - id: dashboard-2017-1762
+    container-cmd: [ "R", "-e", "rmarkdown::run('/home/app/2017-1762/dashboard1.Rmd')" ]
+    container-image: 2017-1762
     container-network: "${proxy.docker.container-network}"
-    container-volumes: [ "/var/lib/docker/volumes/hadatac_hadatac-working_csv/_data/download/oliveh@rpi.edu:/data" ]
-    landing-page: /hello-world
-  - id: clinical-trial-equity
-    container-cmd: ["R", "-e", "shiny::runApp('/home/app', host = '0.0.0.0', port = 3838)"]
-    container-image: therensselaeridea/clinicaltrialequity
+  - id: dashboard-2017-2121
+    container-cmd: [ "R", "-e", "rmarkdown::run('/home/app/2017-2121/dashboard2.Rmd')" ]
+    container-image: 2017-2121
+    container-network: "${proxy.docker.container-network}"
+  - id: dashboard-2016-1431
+    container-cmd: [ "R", "-e", "rmarkdown::run('/home/2016-1431/dashboard1.Rmd')" ]
+    container-image: 2016-1431
     container-network: "${proxy.docker.container-network}"
 logging:
   file:

@@ -1,0 +1,75 @@
+version: '3'
+  
+services:
+
+    shinyproxy:
+        image: tetherlessworld/hadatac-shinyproxy:latest
+        container_name: hadatac_shinyproxy
+        ports:
+            - 8081:8080
+        environment:
+            - "WORK_DIR=${PWD}"
+        networks:
+            hadatac:
+                aliases:
+                    - shinyproxy
+        volumes:
+            - "/var/run/docker.sock:/var/run/docker.sock"
+            - "/var/log/hadatac_shinyproxy/server:/log"
+            - "/var/log/hadatac_shinyproxy/container:/container-logs"
+            - "./shinyproxy/application.yml:/opt/shinyproxy/application.yml"
+            - "./shinyproxy/fragments:/opt/shinyproxy/fragments"
+
+
+    nginx:
+        build: nginx
+        container_name: hadatac_nginx
+        ports:
+            - 80:80
+            - 443:443
+        networks:
+            hadatac:
+               aliases:
+                   - nginx
+        volumes:
+            #Comment out below if SSL certification is not required
+            #- /data/ssl/cert_key/star_mssm_edu.crt:/etc/ssl/certs/mssm.crt
+            #- /data/ssl/cert_key/star_mssm_edu.key:/etc/ssl/private/mssm.key
+            - /data/ssl/cert_key/mssm.crt:/etc/ssl/certs/mssm.crt
+            - /data/ssl/cert_key/mssm.key:/etc/ssl/private/mssm.key
+            - /data/ssl/cert_key/ssl_passwords.txt:/etc/ssl/ssl_passwords.txt
+
+             
+        depends_on:
+            -   shinyproxy
+
+
+    dashboard-2017-1762:
+        image: 2017-1762
+        container_name: 2017-1762
+        build: ./shinyapps/dashboard/2017-1762
+        networks:
+            hadatac:
+                aliases:
+                    - dashboard-2017-1762
+
+    dashboard-2017-2121:
+        image: 2017-2121
+        container_name: 2017-2121
+        build: ./shinyapps/dashboard/2017-2121
+        networks:
+            hadatac:
+                aliases:
+                    - dashboard-2017-2121
+
+    dashboard-2016-1431:
+        image: 2016-1431
+        container_name: 2016-1431
+        build: ./shinyapps/dashboard/2016-1431
+        networks:
+            hadatac:
+                aliases:
+                    - dashboard-2016-1431
+
+networks:
+    hadatac:

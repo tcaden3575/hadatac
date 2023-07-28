@@ -59,17 +59,17 @@ services:
         container_name: hadatac
         tty: true
         ports:
-                - "443:443"
+                - "9000:9000"
         networks:
             hadatac:
                 aliases:
                     - hadatac
         environment:
             # Uncomment below setting when using Solr Authentication. Then rename security.json.template under solr/solr-home/ folder to security.json. Add user & passowrd detail in the hadatac.conf/hadatac-docker.conf file. All changes are mandatory for Solr Authentication to work.
-            JAVA_OPTS: -Xms128m -Xmx12g -Dsolr.httpclient.builder.factory=org.apache.solr.client.solrj.impl.PreemptiveBasicAuthClientBuilderFactory -Dbasicauth=solr:SolrRocks -Dhttp.port=disabled -Dhttps.port=443 -Dplay.server.https.keyStore.path=/root/app/ssl/mssm/star_mssm_edu.pkcs12 -Dplay.server.https.keyStore.type=pkcs12 -Dplay.server.https.keyStore.password=password
-            # JAVA_OPTS: -Xms128m -Xmx12g -Dsolr.httpclient.builder.factory=org.apache.solr.client.solrj.impl.PreemptiveBasicAuthClientBuilderFactory -Dbasicauth=solr:SolrRocks
+            # JAVA_OPTS: -Xms128m -Xmx12g -Dsolr.httpclient.builder.factory=org.apache.solr.client.solrj.impl.PreemptiveBasicAuthClientBuilderFactory -Dbasicauth=solr:SolrRocks -Dhttp.port=disabled -Dhttps.port=443 -Dplay.server.https.keyStore.path=/root/app/ssl/mssm/star_mssm_edu.pkcs12 -Dplay.server.https.keyStore.type=pkcs12 -Dplay.server.https.keyStore.password=password
+            JAVA_OPTS: -Xms128m -Xmx12g -Dsolr.httpclient.builder.factory=org.apache.solr.client.solrj.impl.PreemptiveBasicAuthClientBuilderFactory -Dbasicauth=solr:SolrRocks
             # Comment out below setting when using Solr Authentication
-         #  JAVA_OPTS: -Xms128m -Xmx12g
+            # JAVA_OPTS: -Xms128m -Xmx12g
         volumes:
             # Creates a volume to store the various csv files. This allows the data
             #   to be persisted when the container is removed or when Hadatac is rebuilt.
@@ -85,13 +85,15 @@ services:
             #            - hadatac-conf:/root/app/conf
             - /data/conf:/hadatac/conf # Uncomment this option to use external binding
             #Comment out below if SSL certification is not required
-            - /data/ssl/mssm:/root/app/ssl/mssm
+            # - /data/ssl/mssm:/root/app/ssl/mssm
         links:
             - fuseki
             - solr
         depends_on:
             - fuseki
             - solr
+
+
     shinyproxy:
         image: tetherlessworld/hadatac-shinyproxy:latest
         container_name: hadatac_shinyproxy
@@ -111,23 +113,28 @@ services:
             - "./shinyproxy/fragments:/opt/shinyproxy/fragments"
 
 
-    dashboard-2016-34:
-        image: 2016-34
-        container_name: 2016-34
-        build: ./shinyapps/dashboard/2016-34
+    nginx:
+        build: nginx
+        container_name: hadatac_nginx
+        ports:
+            - 80:80
+            - 443:443
         networks:
             hadatac:
-                aliases:
-                    - dashboard-2016-34
+               aliases:
+                   - nginx
+        volumes:
+            #Comment out below if SSL certification is not required
+            #- /data/ssl/cert_key/star_mssm_edu.crt:/etc/ssl/certs/mssm.crt
+            #- /data/ssl/cert_key/star_mssm_edu.key:/etc/ssl/private/mssm.key
+            - /data/ssl/cert_key/mssm.crt:/etc/ssl/certs/mssm.crt
+            - /data/ssl/cert_key/mssm.key:/etc/ssl/private/mssm.key
+            - /data/ssl/cert_key/ssl_passwords.txt:/etc/ssl/ssl_passwords.txt
 
-    dashboard-2020-0000:
-        image: 2020-0000
-        container_name: 2020-0000
-        build: ./shinyapps/dashboard/2020-0000
-        networks:
-            hadatac:
-                aliases:
-                    - dashboard-2020-0000
+
+        depends_on:
+            -   shinyproxy
+
 
     dashboard-2017-1762:
         image: 2017-1762

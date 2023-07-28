@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+    nginx:
+        build: nginx
+        container_name: hadatac_nginx
+        ports:
+            - 80:80
+            - 443:443
+        networks:
+            hadatac:
+               aliases:
+                   - nginx
+        volumes:
+            #Comment out below if SSL certification is not required
+            - /data/ssl/cert_key/star_mssm_edu.crt:/etc/ssl/certs/mssm.crt
+            - /data/ssl/cert_key/star_mssm_edu.key:/etc/ssl/private/mssm.key
+            - /data/ssl/cert_key/ssl_passwords.txt:/etc/ssl/ssl_passwords.txt            
+            
+networks:
+    hadatac:

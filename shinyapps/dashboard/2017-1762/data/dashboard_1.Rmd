@@ -1,0 +1,911 @@
+---
+title: "Project #2017-1762"
+runtime: shiny
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    social: menu
+    vertical_layout: fill
+    theme: cerulean
+    logo: heear.png
+    source_code: https://urldefense.proofpoint.com/v2/url?u=https-3A__github.com_sallietsang&d=DwIGaQ&c=shNJtf5dKgNcPZ6Yh64b-ALLUrcfR-4CCQkZVKC8w3o&r=dBSsZgqxtO-ClnLzRxog8FGbomoH4dWCe7-KTJn0zIU&m=aJfW88Lw3Y3Che6TNPyECXgNbzaJcnKv_kDvizogwR2obSdL41P7FhQ9ztdTP1zD&s=vPYyFnq-Kp06olzEn_XSBvENPXWJhdFr3dEQN3uApbc&e= 
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(tidyr)
+library(dplyr)
+library(plotly)
+library(ggplot2)
+library(flexdashboard)
+library(DT)
+```
+
+```{r load data}
+shiny_app_data = read.csv("20171762_long.csv")
+clean_data = read.csv("20171762_wide.csv")
+
+```
+
+```{r option, include=FALSE}
+categorical_variable = list(
+               `Caregiver` = 
+                 list(   "Caregiver Sex" = "caregiver_sex",
+                          "Caregiver Treatment Group" = "caregiver_group",
+                          "Caregiver Race " = "caregiver_race",
+                          "Caregiver Ethnicity" = "caregiver_human_ethnicity", 
+                          "Caregiver Age" = "caregiver_age", 
+                          "Caregiver Education Level" = "caregiver_education",  
+                          "Caregiver Smoking Status"  = "caregiver_smoking_status",
+                          "Caregiver Relation"  = "caregiver_relation",
+                          "Resident Building Type"   = "caregiver_household"
+),
+                `Child` = 
+                 list("Child Race" =  "child_race", 
+                      "Child Ethnicity"   = "child_human_ethnicity",
+                       "Child Sex"  = "child_sex",
+                       "Child Destination"   = "child_destination",
+                       "Birth Outcome"  = "birth_outcome")) 
+
+
+biomarker_type= c("C Reactive Protein(pg/mL)" = "c_reactive_protein(pg/mL)", 
+                  "Interleukin-8(pg/mL)" = "interleukin_8(pg/mL)" , 
+                  "Interleukin-10(pg/mL)" = "interleukin_10(pg/mL)",
+                  "Cotinine(ng/mL)" = "cotinine(ng/mL)", 
+                  "Mean Cotinine(ng/mL)" =  "mean_cotinine(ng/mL)")
+
+Time = c( "Baseline" = "baseline",
+          "Followup" = "followup")
+```
+
+Overview
+===================================== 
+
+Inputs {.sidebar}
+-------------------------------------
+#### Biological Responses to Tobacco Smoke Exposure in Ill Children
+
+
+###### **Download cleaned data in this analysis:** 
+* [Wide](https://urldefense.proofpoint.com/v2/url?u=https-3A__github.com_sallietsang_HEEAR-2DDATASET-2D_blob_main_-25232017-2D1762-2Dwide.csv&d=DwIGaQ&c=shNJtf5dKgNcPZ6Yh64b-ALLUrcfR-4CCQkZVKC8w3o&r=dBSsZgqxtO-ClnLzRxog8FGbomoH4dWCe7-KTJn0zIU&m=aJfW88Lw3Y3Che6TNPyECXgNbzaJcnKv_kDvizogwR2obSdL41P7FhQ9ztdTP1zD&s=xwUhkZfuqaVeoowTE-h970hvPmfiZ-KhgW0_PU_3E_Y&e= )
+
+* [Long](https://urldefense.proofpoint.com/v2/url?u=https-3A__github.com_sallietsang_HEEAR-2DDATASET-2D_blob_main_-25232017-2D1762-2Dlong.csv&d=DwIGaQ&c=shNJtf5dKgNcPZ6Yh64b-ALLUrcfR-4CCQkZVKC8w3o&r=dBSsZgqxtO-ClnLzRxog8FGbomoH4dWCe7-KTJn0zIU&m=aJfW88Lw3Y3Che6TNPyECXgNbzaJcnKv_kDvizogwR2obSdL41P7FhQ9ztdTP1zD&s=vIvK3RxuPTLrQcmEgel126u-ZacoBOfe-_paxSWv0o4&e= )
+
+###### Choose a `Categorical Variable` to explore its impact on the distribution of daily smoking and sample size. The visualizations will update to show how these factors change for the selected category
+
+###### Select `Time` you are interested in to view the corresponding results at different experimental period
+```{r}
+
+selectInput("categorical_variable2",
+            label = "Categorical Variable", 
+            choices = c(list(
+               `Caregiver` = 
+                 list(   "Caregiver Sex" = "caregiver_sex",
+                          "Caregiver Treatment Group" = "caregiver_group",
+                          "Caregiver Race " = "caregiver_race",
+                          "Caregiver Ethnicity" = "caregiver_human_ethnicity", 
+                          "Caregiver Age" = "caregiver_age", 
+                          "Caregiver Education Level" = "caregiver_education",  
+                          "Caregiver Smoking Status"  = "caregiver_smoking_status",
+                          "Resident Building Type"   = "caregiver_household",
+                          "Caregiver Relation"  = "caregiver_relation"),
+                `Child` = 
+                 list("Child Race" =  "child_race", 
+                       "Child Ethnicity"   = "child_human_ethnicity",
+                       "Child Sex"  = "child_sex", 
+                       "Child Destination"   = "child_destination",
+                      "Birth Outcome"  = "birth_outcome"), 
+                `Respiratory health` = 
+                 list( "Asthma" = "asthma", 
+                       "Bronchiolitis" = "bronchiolitis", 
+                       "Reactive_airway" = "reactive_airway", 
+                       "Pneumonia" =  "pneumonia"))))
+               
+
+radioButtons("time2", 
+             label = "Time", 
+              choices = c("Baseline"  = "baseline", 
+                          "Followup" = "followup"), 
+             selected = "baseline")
+
+```
+
+
+Row{data-height=250}
+--------
+
+### Sample Size  %{data-width=5%}
+```{r}
+renderValueBox({
+valueBox(value = 411, 
+         caption = "Participants <br> in total", 
+     icon="fa-users", 
+     color = "navy")
+     })
+```
+
+### Week %{data-width=5%}
+```{r}
+renderValueBox({
+valueBox(value = 6, 
+         caption = "Weeks experiment", 
+     icon="fa-clock", 
+     color = "navy")
+     })
+```
+
+### About the Study 
+
+The CHEAR project will use sensitive LCMS techniques to analyze cotinine, a measure of tobacco smoke exposure, in child saliva samples collected from ill children at baseline and six-weeks after baseline. Investigators will explore the associations between different levels of tobacco smoke exposure and a broad range of biological outcomes associated with immune system dysregulation based on biomarkers of inflammatory responses and findings from targeted and untargeted metabolomics.
+
+### Sample Size Distribution 
+```{r}
+renderPlotly({
+clean_data %>%  
+   group_by_(input$categorical_variable2)%>% 
+  summarise(count=n()) %>% 
+plot_ly(labels = ~get(input$categorical_variable2), values = ~count, type = 'pie',
+        textposition = 'inside',
+        textinfo = 'label+percent',
+        insidetextfont = list(color = '#FFFFFF'))%>%
+    layout(showlegend = TRUE, legend = list(font = list(size = 8)), 
+           height = 170, width = 320)
+ })
+
+```
+
+
+Row  {data-height=180}
+--------------------------------------
+### Cotinine
+```{r}
+renderValueBox({
+  valueBox(value = tags$p("Cotinine (ng/mL)", style = "font-size: 50%;"),
+         caption = "A product formed after the chemical nicotine enters the body",
+     icon="fa-flask")
+     })
+
+```
+
+### C-Reactive Protein 
+```{r}
+renderValueBox({
+valueBox(value = tags$p("C-Reactive Protein (pg/mL)", style = "font-size: 50%;"),
+         caption = " A protein produced by the liver. Its level increases in response to inflammation", 
+     icon="fa-flask")
+     })
+
+```
+
+### Interleukin-8
+```{r}
+renderValueBox({
+valueBox(value = tags$p("Interleukin-8 (pg/mL)" , style = "font-size: 50%;"),
+         caption = " A chemokine made by macrophages and other cell types", 
+     icon="fa-flask")
+     })
+
+```
+
+### Interleukin-10
+```{r}
+renderValueBox({
+valueBox(value = tags$p("Interleukin-10 (pg/mL)" , style = "font-size: 50%;"),
+         caption = "A chemokine made by several types of cells, including activated T lymphocytes, monocytes, B cells and nonhematopoietic sources", 
+     icon="fa-flask")
+     })
+
+```
+
+
+Row {data-height = 500}
+--------------------------------------
+### Average Biomarker Concentration 
+```{r}
+renderPlotly({
+shiny_app_data %>% 
+   filter(week == input[["time2"]]) %>% 
+  drop_na(biomarker_conc) %>% 
+  group_by(biomarker_type) %>% 
+  summarize(avg_biomarker_conc = round(mean(biomarker_conc),2)) %>% 
+  plot_ly(x = ~biomarker_type, y = ~avg_biomarker_conc,
+          type = 'scatter',
+          mode = 'markers+text', 
+          marker = list(size = 10),
+          text = ~paste(biomarker_type,
+                        '<br>', avg_biomarker_conc),
+          hoverinfo = 'text',
+        textposition = 'down right',
+          textfont = list(size = 10),
+          color = ~biomarker_type) %>%
+  layout(xaxis = list(title = '', showticklabels = FALSE),
+         yaxis = list(title = 'Avg Biomarker Conc'))%>%
+  layout(showlegend = TRUE, legend = list(font = list(size = 8)), 
+           height = 350, width =500)
+})
+```
+
+
+### Caregivers' Daily Smoking Distribution by Selected Category and Time
+```{r}
+renderPlotly({
+  
+clean_data %>%
+    select(-caregiver_ecigar_baseline, -caregiver_ecigar_followup, 
+           -caregiver_ecigar_use_baseline, -caregiver_ecigar_use_followup, 
+           -child_smoke_exposure_baseline, - child_smoke_exposure_followup) %>% 
+  pivot_longer(
+    cols= c(caregiver_cigar_baseline,caregiver_cigar_followup), 
+    names_to = "week", 
+    names_prefix = "caregiver_cigar_", 
+    values_to = "cigarette_per_day"
+  ) %>% 
+    filter(week == input[["time2"]]) %>% 
+  plot_ly(
+    y = ~cigarette_per_day,
+    split = ~ get(input$categorical_variable2),
+    type = 'violin',
+    box = list(
+      visible = T
+    ),
+    meanline = list(
+      visible = T
+    )
+  ) %>%
+    layout(showlegend = TRUE, 
+           legend = list(font = list(size = 8)),
+           xaxis = list(showticklabels = FALSE), 
+           yaxis = list(title = "Cigarette Use per Day"), 
+           height = 350)
+})
+
+```
+
+
+
+
+Association
+===================================== 
+
+Inputs {.sidebar}
+-----------------------------------------------------------------------
+#### Biological Responses to Tobacco Smoke Exposure in Ill Children
+
+###### Select a `Categorical Variable` to view the distribution of respiratory health problems and biomarker concentrations among children. Use the dropdown menu to choose a `Biological Response Type` and adjust the range of daily cigarette exposure using the scroll bar `Daily Cigarette Exposure of Children `. You can also select the experimental `Time` point
+```{r}
+
+selectInput("categorical_variable",
+            label = "Categorical Variable", 
+            choices = categorical_variable)
+
+radioButtons("biomarker_type", 
+             label = "Biological Response Type", 
+              choices = biomarker_type, 
+             selected = "c_reactive_protein(pg/mL)")
+sliderInput(
+    "child_smoke_exposure", 
+    label = "Daily Cigarette Exposure of Children", 
+    max= 224, 
+    min= 0, 
+    value = c(0,224)
+)
+
+radioButtons("time", 
+             label = "Time", 
+              choices = Time, 
+             selected = "baseline")
+```
+
+
+Row {data-height=200}
+--------------------------------------
+### Number of Samples Used for Calculating Biomarker Concentration  %{data-width=25%}
+
+```{r}
+renderValueBox({
+
+     selected_variables = input$biomarker_type
+
+     
+sample_size <- shiny_app_data %>%
+    filter(biomarker_type == input[["biomarker_type"]], 
+           week == input[["time"]], 
+           child_smoke_exposure >= input[["child_smoke_exposure"]][1], 
+           child_smoke_exposure <= input[["child_smoke_exposure"]][2]
+            ) %>%  
+            drop_na(biomarker_conc) %>% 
+            nrow()
+            
+valueBox(value = sample_size , 
+         caption = tags$p(
+      style = "font-size: 15px;",
+      paste("Sample Size Included",selected_variables)
+    ),
+         icon = "fa-users")
+})
+
+```
+
+### Selected Biomarker Mean Concentration %{data-width=25%}
+```{r}
+renderValueBox({
+
+  selected_variables = input$biomarker_type
+
+  
+mean_conc <- shiny_app_data %>%
+    filter(biomarker_type == input[["biomarker_type"]], 
+           week == input[["time"]], 
+           child_smoke_exposure >= input[["child_smoke_exposure"]][1], 
+           child_smoke_exposure <= input[["child_smoke_exposure"]][2]
+            ) %>%  
+            drop_na(biomarker_conc) %>% 
+      summarise(biomarker_conc = round(mean(biomarker_conc),2))
+            
+valueBox(value = mean_conc , 
+         caption = tags$p(
+      style = "font-size: 15px;",
+      paste("Mean Concentration of",selected_variables)
+    ),
+     icon="fa-flask")
+     })
+
+```
+
+### Number of Children having respiratory health problem  %{data-width=15%}
+```{r}
+
+
+
+renderValueBox({
+  
+   total_amount = shiny_app_data %>% 
+     filter(week == input[["time"]], 
+           child_smoke_exposure >= input[["child_smoke_exposure"]][1], 
+           child_smoke_exposure <= input[["child_smoke_exposure"]][2]
+            ) %>% 
+  distinct(human_id, .keep_all = TRUE) %>%  
+  group_by(get(input$categorical_variable)) %>% 
+  mutate(asthma = sum(asthma), 
+            reactive_airway = sum(reactive_airway), 
+            bronchiolitis = sum(bronchiolitis), 
+            pneumonia = sum(pneumonia)) %>% 
+  pivot_longer(
+    cols= c(asthma, reactive_airway ,bronchiolitis,pneumonia), 
+    names_to = "diseases", 
+    values_to = "count"
+  ) %>% 
+  select(diseases, count, input$categorical_variable) %>%  
+  distinct() %>% 
+  ungroup() %>% 
+  summarize(total = sum(count)) %>% 
+  pull(total)
+  
+valueBox(value =    total_amount, 
+         caption = "Children have respiratory health problems", 
+     icon="fa-male", 
+     color = "#73c2fb")
+     })
+
+
+```
+
+### Respiratory Health Problems in Children by Selected Category: Count Analysis
+```{r}
+renderPlotly({
+
+diseaes_count = shiny_app_data %>%
+    filter(week == input[["time"]], 
+           child_smoke_exposure >= input[["child_smoke_exposure"]][1], 
+           child_smoke_exposure <= input[["child_smoke_exposure"]][2]
+            ) %>% 
+  distinct(human_id, .keep_all = TRUE) %>%  
+  group_by(get(input$categorical_variable)) %>% 
+  mutate(asthma = sum(asthma), 
+            reactive_airway = sum(reactive_airway), 
+            bronchiolitis = sum(bronchiolitis), 
+            pneumonia = sum(pneumonia)) %>% 
+  pivot_longer(
+    cols= c(asthma, reactive_airway ,bronchiolitis,pneumonia), 
+    names_to = "diseases", 
+    values_to = "count"
+  ) %>% 
+  select(diseases, count, input$categorical_variable) %>%  
+  distinct() %>% 
+  ggplot(aes(fill= get(input$categorical_variable),
+             y= count, 
+             x= diseases))+
+  geom_bar(stat = "identity",
+           position = "dodge")+
+  scale_fill_discrete(name=NULL)+ theme_classic()+
+  theme(axis.text.x = element_text(size = 7))
+
+    
+diseaes_count %>%
+  ggplotly()%>%
+    layout(showlegend = TRUE, legend = list(font = list(size = 8)),
+           xaxis= list (title = ''),
+           height = 180)
+     })
+
+```
+
+Row
+----------------------------------
+
+
+### Box Plot of Biomarker Concentration by Selected Categorical Variable Under Selected Range of Smoke Exposure Level
+```{r}
+
+renderPlotly({
+  
+ shiny_app_data  %>%
+    filter(biomarker_type == input[["biomarker_type"]], 
+           week == input[["time"]], 
+           child_smoke_exposure >= input[["child_smoke_exposure"]][1], 
+           child_smoke_exposure <= input[["child_smoke_exposure"]][2]
+            ) %>% 
+   plot_ly(   
+              y= ~biomarker_conc, 
+              color = ~  get(input$categorical_variable),
+              type = "box") %>%
+    layout(showlegend = TRUE, legend = list(font = list(size = 10)))%>% 
+    layout(xaxis= list(showticklabels = FALSE, title = '') ,
+           yaxis = list(title = input$biomarker_type, titlefont = list(size = 12)))
+})
+
+```
+
+
+### Scatterplot of Biomarker Concentration by Selected Categorical Variable Under Selected Range of Smoke Exposure Level
+```{r}
+
+renderPlotly({
+
+ shiny_app_data  %>%
+    filter(biomarker_type == input[["biomarker_type"]], 
+           week == input[["time"]], 
+           child_smoke_exposure >= input[["child_smoke_exposure"]][1], 
+           child_smoke_exposure <= input[["child_smoke_exposure"]][2]
+            ) %>% 
+ plot_ly(
+    x =  ~child_smoke_exposure,
+    y = ~ biomarker_conc,
+    type = "scatter", 
+    color = ~get(input$categorical_variable))%>%
+    layout(showlegend = TRUE, legend = list(font = list(size = 10)),
+           yaxis = list(title = input$biomarker_type, titlefont = list(size = 12)), 
+           xaxis  = list(title = "Selected Range of Daily Smoke Exposure to Child" ,titlefont = list(size = 12)))
+    
+})
+```
+
+Smoke Exposure Change
+=====================================
+
+```{r Data Cleaning, include=FALSE}
+smoke_expo_change = clean_data  %>% 
+  rename(mean_cotinine_baseline = child_mean_conc_cotinine_baseline, 
+         mean_cotinine_followup = child_mean_conc_cotinine_followup) %>% 
+  mutate(child_smoke_exposure_change =  child_smoke_exposure_followup - child_smoke_exposure_baseline, 
+         cotinine_conc_change = cotinine_followup - cotinine_baseline,
+         interleukin_10_conc_change =  interleukin_10_followup - interleukin_10_baseline, 
+         interleukin_8_conc_change = interleukin_8_followup - interleukin_8_baseline, 
+         c_reactive_protein_conc_change = c_reactive_protein_followup -c_reactive_protein_baseline, 
+          mean_cotinine_conc_change = mean_cotinine_followup - mean_cotinine_baseline
+         ) %>% 
+  drop_na(child_smoke_exposure_change)  %>%  
+   rename_all(~stringr::str_replace(.,"_conc_change",""))  %>% 
+  pivot_longer(
+    cols = c(cotinine, interleukin_10, interleukin_8, c_reactive_protein, mean_cotinine), 
+    values_to = "conc_change", 
+    names_to = "biomarker_type" 
+  ) %>% 
+  drop_na(conc_change) %>%  
+  mutate(biomarker_type = case_when(
+    biomarker_type == "c_reactive_protein" ~ "c_reactive_protein(pg/mL)", 
+    biomarker_type == "interleukin_8" ~ "interleukin_8(pg/mL)",
+     biomarker_type == "interleukin_10" ~ "interleukin_10(pg/mL)",
+     biomarker_type == "cotinine" ~ "cotinine(ng/mL)", 
+      biomarker_type == "mean_cotinine" ~"mean_cotinine(ng/mL)"
+  ))
+
+```
+
+Inputs {.sidebar}
+-------------------------------------
+#### Biological Responses to Tobacco Smoke Exposure in Ill Children
+
+```{r}
+selectInput("categorical_variable3",
+            label = "Categorical Variable", 
+            choices =list(
+               `Caregiver` = 
+                 list(   "Caregiver Sex" = "caregiver_sex",
+                          "Caregiver Treatment Group" = "caregiver_group",
+                          "Caregiver Race " = "caregiver_race",
+                          "Caregiver Ethnicity" = "caregiver_human_ethnicity", 
+                          "Caregiver Age" = "caregiver_age", 
+                          "Caregiver Education Level" = "caregiver_education",  
+                          "Caregiver Smoking Status"  = "caregiver_smoking_status",
+                          "Caregiver Relation"  = "caregiver_relation",
+                          "Resident Building Type"   = "caregiver_household"),
+                `Child` = 
+                 list("Child Race" =  "child_race", 
+                      "Child Ethnicity"   = "child_human_ethnicity",
+                       "Child Sex"  = "child_sex",
+                       "Child Destination"   = "child_destination",
+                       "Birth Outcome"  = "birth_outcome"), 
+              `None` =  
+                 list( "none") ), 
+            selected = "caregiver_sex")
+
+
+
+radioButtons("biomarker_type3", 
+             label = "Biological Response Type", 
+              choices = biomarker_type, 
+             selected = "c_reactive_protein(pg/mL)")
+
+sliderInput(
+    "smoke_exposure_change", 
+    label = "Child's Smoke Exposure Change During the Study", 
+    max= 50, 
+    min= -179, 
+    value = c(-179,50)
+)
+```
+
+
+Row {data-height =300}
+--------
+###  <span style='font-size:13px; '>Changes in Caregivers' Daily Cigarette Intake Over Time (Baseline & Followup) by Category</span> 
+```{r}
+
+renderPlotly({
+  
+  if (input$categorical_variable3 != "none") {
+
+cigarette_intake_change = clean_data %>% 
+  select(-caregiver_ecigar_baseline, -caregiver_ecigar_followup, 
+           -caregiver_ecigar_use_baseline, -caregiver_ecigar_use_followup, 
+           -child_smoke_exposure_baseline, - child_smoke_exposure_followup) %>% 
+  mutate(cigarette_intake_change = caregiver_cigar_followup- caregiver_cigar_baseline, 
+         asthma = as.factor(asthma), 
+         bronchiolitis = as.factor(bronchiolitis), 
+         reactive_airway = as.factor(reactive_airway), 
+         pneumonia = as.factor(pneumonia)
+         ) %>% 
+  drop_na(cigarette_intake_change) %>% 
+  ggplot(aes(x=cigarette_intake_change,
+             group=get(input$categorical_variable3), 
+             fill=get(input$categorical_variable3))) +
+    geom_density(adjust=1.5,
+                 alpha=.3)+
+  geom_vline(xintercept=0, 
+             size=0.4,
+             color="red", 
+             alpha =.5,
+             linetype = "dotted")}
+  
+  
+  if (input$categorical_variable3 == "none") {
+    
+    cigarette_intake_change = clean_data %>% 
+  select(-caregiver_ecigar_baseline, -caregiver_ecigar_followup, 
+           -caregiver_ecigar_use_baseline, -caregiver_ecigar_use_followup, 
+           -child_smoke_exposure_baseline, - child_smoke_exposure_followup) %>% 
+  mutate(cigarette_intake_change = caregiver_cigar_followup- caregiver_cigar_baseline, 
+         asthma = as.factor(asthma), 
+         bronchiolitis = as.factor(bronchiolitis), 
+         reactive_airway = as.factor(reactive_airway), 
+         pneumonia = as.factor(pneumonia)
+         ) %>% 
+  drop_na(cigarette_intake_change) %>% 
+  ggplot(aes(x=cigarette_intake_change)) +
+    geom_density(adjust=1.5,
+                 alpha=.3)+
+  geom_vline(xintercept=0, 
+             size=0.4,
+             color="red", 
+             alpha =.5,
+             linetype = "dotted")
+    
+  }
+    
+cigarette_intake_change %>%
+  ggplotly() %>%
+  layout(showlegend = TRUE, 
+         legend = list(font = list(size = 8), title = list(text = "")), 
+         yaxis = list(title = "Density", 
+                      titlefont = list(size = 12)), 
+         xaxis = list(title = "Daily Cigarette Intake Over Time", 
+                      titlefont = list(size = 12)))
+
+})
+
+```
+
+### Trend of Avg Biomarker Concentration Change Over Time
+```{r}
+
+renderPlotly({
+  
+    if (input$biomarker_type3 == "c_reactive_protein(pg/mL)" & input$categorical_variable3 != "none") {
+
+p = clean_data %>% 
+  mutate(child_smoke_exposure_change =  child_smoke_exposure_followup - child_smoke_exposure_baseline) %>% 
+  select(c_reactive_protein_baseline, c_reactive_protein_followup, child_smoke_exposure_change, !!sym(input$categorical_variable3)) %>% 
+  filter( child_smoke_exposure_change >= input[["smoke_exposure_change"]][1], 
+           child_smoke_exposure_change <= input[["smoke_exposure_change"]][2]) %>% 
+  group_by(!!sym(input$categorical_variable3)) %>%
+  drop_na(c_reactive_protein_baseline,c_reactive_protein_followup) %>% 
+  summarize(baseline = mean(c_reactive_protein_baseline),
+            followup = mean(c_reactive_protein_followup)) %>% 
+  pivot_longer(cols = c(baseline,followup), 
+               names_to = c("week"), 
+               values_to = "avg_biomarker_conc") %>% 
+  ggplot(aes(x= week, y=avg_biomarker_conc, color = !!sym(input$categorical_variable3))) +
+     geom_point()+
+     geom_line(aes(group = !!sym(input$categorical_variable3)))+
+     ylab("C Reactive Protein(pg/mL)")  +
+  theme(axis.title.y = element_text(size = 8))
+    }
+  
+   if (input$biomarker_type3 == "interleukin_8(pg/mL)" & input$categorical_variable3 != "none") {
+
+p = clean_data %>% 
+  mutate(child_smoke_exposure_change =  child_smoke_exposure_followup - child_smoke_exposure_baseline) %>% 
+  select(interleukin_8_baseline, interleukin_8_followup, child_smoke_exposure_change, !!sym(input$categorical_variable3)) %>% 
+  filter( child_smoke_exposure_change >= input[["smoke_exposure_change"]][1], 
+           child_smoke_exposure_change <= input[["smoke_exposure_change"]][2]) %>% 
+  group_by(!!sym(input$categorical_variable3)) %>%
+  drop_na(interleukin_8_baseline,interleukin_8_followup) %>% 
+  summarize(baseline = mean(interleukin_8_baseline),
+            followup = mean(interleukin_8_followup)) %>% 
+  pivot_longer(cols = c(baseline,followup), 
+               names_to = c("week"), 
+               values_to = "avg_biomarker_conc") %>% 
+  ggplot(aes(x= week, y=avg_biomarker_conc, color = !!sym(input$categorical_variable3))) +
+     geom_point()+
+     geom_line(aes(group = !!sym(input$categorical_variable3)))+
+     ylab("C Reactive Protein(pg/mL)")  +
+  theme(axis.title.y = element_text(size = 8))
+  }
+    
+   if (input$biomarker_type3 == "interleukin_10(pg/mL)" & input$categorical_variable3!= "none") {
+
+p = clean_data %>% 
+  mutate(child_smoke_exposure_change =  child_smoke_exposure_followup - child_smoke_exposure_baseline) %>% 
+  select(interleukin_10_baseline, interleukin_10_followup, child_smoke_exposure_change, !!sym(input$categorical_variable3)) %>% 
+  filter( child_smoke_exposure_change >= input[["smoke_exposure_change"]][1], 
+           child_smoke_exposure_change <= input[["smoke_exposure_change"]][2]) %>% 
+  group_by(!!sym(input$categorical_variable3)) %>%
+  drop_na(interleukin_10_baseline,interleukin_10_followup) %>% 
+  summarize(baseline = mean(interleukin_10_baseline),
+            followup = mean(interleukin_10_followup)) %>% 
+  pivot_longer(cols = c(baseline,followup), 
+               names_to = c("week"), 
+               values_to = "avg_biomarker_conc") %>% 
+  ggplot(aes(x= week, y=avg_biomarker_conc, color = !!sym(input$categorical_variable3))) +
+     geom_point()+
+     geom_line(aes(group = !!sym(input$categorical_variable3)))+
+     ylab("C Reactive Protein(pg/mL)")  +
+  theme(axis.title.y = element_text(size = 8))
+   }
+
+  
+  if (input$biomarker_type3 == "mean_cotinine(ng/mL)" & input$categorical_variable3 != "none") {
+
+p = clean_data %>% 
+  mutate(child_smoke_exposure_change =  child_smoke_exposure_followup - child_smoke_exposure_baseline) %>% 
+  select(child_mean_conc_cotinine_baseline, child_mean_conc_cotinine_followup, child_smoke_exposure_change, !!sym(input$categorical_variable3)) %>% 
+  filter( child_smoke_exposure_change >= input[["smoke_exposure_change"]][1], 
+           child_smoke_exposure_change <= input[["smoke_exposure_change"]][2]) %>% 
+  group_by(!!sym(input$categorical_variable3)) %>%
+  drop_na(child_mean_conc_cotinine_baseline,child_mean_conc_cotinine_followup) %>% 
+  summarize(baseline = mean(child_mean_conc_cotinine_baseline),
+            followup = mean(child_mean_conc_cotinine_followup)) %>% 
+  pivot_longer(cols = c(baseline,followup), 
+               names_to = c("week"), 
+               values_to = "avg_biomarker_conc") %>% 
+  ggplot(aes(x= week, y=avg_biomarker_conc, color = !!sym(input$categorical_variable3))) +
+     geom_point()+
+     geom_line(aes(group = !!sym(input$categorical_variable3)))+
+     ylab("C Reactive Protein(pg/mL)")  +
+  theme(axis.title.y = element_text(size = 8))
+   }
+
+  if (input$biomarker_type3 == "cotinine(ng/mL)" & input$categorical_variable3!= "none") {
+
+p = clean_data %>% 
+  mutate(child_smoke_exposure_change =  child_smoke_exposure_followup - child_smoke_exposure_baseline) %>% 
+  select(cotinine_baseline, cotinine_followup, child_smoke_exposure_change, !!sym(input$categorical_variable3)) %>% 
+  filter( child_smoke_exposure_change >= input[["smoke_exposure_change"]][1], 
+           child_smoke_exposure_change <= input[["smoke_exposure_change"]][2]) %>% 
+  group_by(!!sym(input$categorical_variable3)) %>%
+  drop_na(cotinine_baseline,cotinine_followup) %>% 
+  summarize(baseline = mean(cotinine_baseline),
+            followup = mean(cotinine_followup)) %>% 
+  pivot_longer(cols = c(baseline,followup), 
+               names_to = c("week"), 
+               values_to = "avg_biomarker_conc") %>% 
+  ggplot(aes(x= week, y=avg_biomarker_conc, color = !!sym(input$categorical_variable3))) +
+     geom_point()+
+     geom_line(aes(group = !!sym(input$categorical_variable3)))+
+     ylab("C Reactive Protein(pg/mL)")  +
+  theme(axis.title.y = element_text(size = 8))
+  }
+  
+   if ( input$categorical_variable3 == "none") {
+
+
+p = clean_data %>% 
+  mutate(child_smoke_exposure_change =  child_smoke_exposure_followup - child_smoke_exposure_baseline) %>% 
+  select(c_reactive_protein_baseline:child_mean_conc_cotinine_followup,  child_smoke_exposure_change) %>% 
+  filter( child_smoke_exposure_change >= input[["smoke_exposure_change"]][1], 
+           child_smoke_exposure_change <= input[["smoke_exposure_change"]][2]) %>% 
+  drop_na(c_reactive_protein_baseline:child_mean_conc_cotinine_followup) %>% 
+  summarize(c_reactive_proteinbaseline = mean(c_reactive_protein_baseline),
+            c_reactive_proteinfollowup = mean(c_reactive_protein_followup),
+            interleukin_8baseline = mean(interleukin_8_baseline),
+            interleukin_8followup = mean(interleukin_8_followup),
+            interleukin_10baseline = mean(interleukin_10_baseline),
+            interleukin_10followup = mean(interleukin_10_followup),
+            cotininebaseline = mean(cotinine_baseline),
+            cotininefollowup = mean(cotinine_followup),
+            child_mean_conc_cotininebaseline = mean(child_mean_conc_cotinine_baseline),
+            child_mean_conc_cotininefollowup = mean(child_mean_conc_cotinine_followup)) %>% 
+  pivot_longer(cols = c(c_reactive_proteinbaseline:
+                          child_mean_conc_cotininefollowup), 
+               names_to = c("biomarker_type","week"), 
+               values_to = "avg_biomarker_conc", 
+               names_sep = -8) %>% 
+  ggplot(aes(x= week, y=avg_biomarker_conc, color = biomarker_type)) +
+     geom_point()+
+     geom_line(aes(group =  biomarker_type))+
+     ylab("C Reactive Protein(pg/mL)")  +
+  theme(axis.title.y = element_text(size = 8))
+   }
+  
+p%>%
+  ggplotly() %>% 
+  layout(showlegend = TRUE, 
+         legend = list(font = list(size = 8), title = list(text = "")))
+
+
+})
+
+```
+
+Row {data-height=700}
+--------
+###  Box Plot of Biomarker Concentration Change by Selected Category and Selected Range of Child Smoke Exposure Change
+```{r}
+
+renderPlotly({
+  
+if (input$categorical_variable3 != "none") {
+
+p = smoke_expo_change  %>%
+    filter(biomarker_type == input[["biomarker_type3"]], 
+           child_smoke_exposure_change >= input[["smoke_exposure_change"]][1], 
+           child_smoke_exposure_change <= input[["smoke_exposure_change"]][2])%>% 
+   plot_ly(   
+              y= ~ conc_change, 
+              color = ~  get(input$categorical_variable3),
+              type = "box") %>%
+    layout(showlegend = TRUE, legend = list(font = list(size = 10)))%>% 
+    layout(xaxis= list(showticklabels = FALSE))
+}
+  
+if (input$categorical_variable3 == "none") {
+  p = smoke_expo_change  %>%
+    filter(biomarker_type == input[["biomarker_type3"]], 
+           child_smoke_exposure_change >= input[["smoke_exposure_change"]][1], 
+           child_smoke_exposure_change <= input[["smoke_exposure_change"]][2])%>% 
+   plot_ly(   
+              y= ~ conc_change, 
+              type = "box") %>% 
+    layout(xaxis= list(showticklabels = FALSE))
+}
+  
+p%>%
+    layout(
+  yaxis = list(title = paste("Change of Conc -", input$biomarker_type3), 
+               titlefont = list(size = 10)), 
+  width = 450)
+
+})
+
+
+
+```
+
+### Scatterplot of Biomarker Concentration Change by Selected Category and Selected Range of Child Smoke Exposure Change
+```{r}
+
+renderPlotly({
+  
+if (input$categorical_variable3 != "none") {
+     p2 <- smoke_expo_change  %>%
+    filter(biomarker_type == input[["biomarker_type3"]], 
+           child_smoke_exposure_change >= input[["smoke_exposure_change"]][1], 
+           child_smoke_exposure_change <= input[["smoke_exposure_change"]][2])%>% 
+         plot_ly(
+                x = ~ child_smoke_exposure_change, 
+                y = ~ conc_change,
+                color = ~ get(input$categorical_variable3)) 
+       
+       }
+    
+if (input$categorical_variable3 == "none") {
+
+  p2 <-smoke_expo_change %>%
+    filter(biomarker_type == input[["biomarker_type3"]], 
+           child_smoke_exposure_change >= input[["smoke_exposure_change"]][1], 
+           child_smoke_exposure_change <= input[["smoke_exposure_change"]][2])%>% 
+        plot_ly(
+                x = ~ child_smoke_exposure_change, 
+                y = ~ conc_change)
+
+}
+  
+p2%>%
+    layout(
+  yaxis = list(title = paste("Change of Conc -", input$biomarker_type3), 
+               titlefont = list(size = 10)), 
+  xaxis = list(title = "Selected Range of Child Smoke Exposure Change", 
+               titlefont = list(size = 10)))
+
+})
+```
+
+
+Row {data-height =300}
+--------
+
+### Table Summarizing Biomarker Concentration Change by Selected Category and Selected Range of Child Smoke Exposure Change
+```{r}
+renderDataTable({
+  
+  if (input$categorical_variable3 == "none") {
+table = datatable( smoke_expo_change  %>%
+    filter(biomarker_type  == input[["biomarker_type3"]], 
+           child_smoke_exposure_change >= input[["smoke_exposure_change"]][1], 
+           child_smoke_exposure_change <= input[["smoke_exposure_change"]][2]) %>% 
+    select(human_id,child_smoke_exposure_change,conc_change) %>% 
+    arrange(desc(conc_change)) %>% 
+      distinct()
+,options = list(scrollY=TRUE,
+                bPaginate = FALSE,
+                searching = FALSE, 
+                info = FALSE),
+            fillContainer = TRUE) 
+  }
+    if (input$categorical_variable3 != "none") {
+      table = datatable( smoke_expo_change  %>%
+    filter(biomarker_type  == input[["biomarker_type3"]], 
+           child_smoke_exposure_change >= input[["smoke_exposure_change"]][1], 
+           child_smoke_exposure_change <= input[["smoke_exposure_change"]][2]) %>% 
+    select(human_id,child_smoke_exposure_change,conc_change, !!input$categorical_variable3) %>% 
+    arrange(desc(conc_change)) %>% 
+      distinct()
+,options = list(scrollY=TRUE,
+                bPaginate = FALSE,
+                searching = FALSE, 
+                info = FALSE),
+            fillContainer = TRUE) 
+    }
+  table
+})
+
+```
+
+
+
+
+
+
+
+

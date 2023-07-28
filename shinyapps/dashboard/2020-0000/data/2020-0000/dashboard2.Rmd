@@ -1,0 +1,1626 @@
+---
+title: "#2017-2121"
+runtime: shiny
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    social: menu
+    vertical_layout: fill
+    logo: heear.png
+    theme: cerulean
+    source_code: https://urldefense.proofpoint.com/v2/url?u=https-3A__github.com_sallietsang&d=DwIGaQ&c=shNJtf5dKgNcPZ6Yh64b-ALLUrcfR-4CCQkZVKC8w3o&r=dBSsZgqxtO-ClnLzRxog8FGbomoH4dWCe7-KTJn0zIU&m=ZXzJ6b8NE3kfTEMSND-yAxV2dHqDIxrHwXB0vDpo-ZqWeL5vSX-kLTYhUYpsX_JN&s=IhMQbTBEcn78-gH7_RcUnn6T3CN08FoyYvUvCR2SBUs&e= 
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(tidyr)
+library(shiny)
+library(dplyr)
+library(plotly)
+library(ggplot2)
+library(reshape2)
+library(flexdashboard)
+library(ggcorrplot)
+
+```
+
+```{r load data}
+
+depart_baseline= read.csv(file= "depart_baseline.csv") %>%
+  select(-X)
+
+depart_followup= read.csv(file= "depart_followup.csv") %>%
+  select(-X)
+depart_followup_2= read.csv(file= "depart_followup_2.csv") %>%  
+  select(-X)
+depart_followup_3= read.csv(file= "depart_followup_3.csv") %>%  
+  select(-X)
+
+
+
+```
+
+
+Overview
+===================================== 
+
+Inputs {.sidebar}
+-----------------------------------------------------------------------
+##### The Dynamics of Exposure, Phthalates and Asthma in a Randomized Trial (DEPART)
+
+###### **Download cleaned data in this analysis:** 
+* [Cleaned-Baseline](https://urldefense.proofpoint.com/v2/url?u=https-3A__github.com_sallietsang_HEEAR-2DDATASET-2D_blob_main_-25232017-2D2121-2DBaseline.csv&d=DwIGaQ&c=shNJtf5dKgNcPZ6Yh64b-ALLUrcfR-4CCQkZVKC8w3o&r=dBSsZgqxtO-ClnLzRxog8FGbomoH4dWCe7-KTJn0zIU&m=ZXzJ6b8NE3kfTEMSND-yAxV2dHqDIxrHwXB0vDpo-ZqWeL5vSX-kLTYhUYpsX_JN&s=6mLM3udtOJ6fxwEsyDU3dOAissN-m7jAkHkgVCl7MMo&e= )
+* [Cleaned-Followup](https://urldefense.proofpoint.com/v2/url?u=https-3A__github.com_sallietsang_HEEAR-2DDATASET-2D_blob_main_-25232017-2D2121-2DFollowup.csv&d=DwIGaQ&c=shNJtf5dKgNcPZ6Yh64b-ALLUrcfR-4CCQkZVKC8w3o&r=dBSsZgqxtO-ClnLzRxog8FGbomoH4dWCe7-KTJn0zIU&m=ZXzJ6b8NE3kfTEMSND-yAxV2dHqDIxrHwXB0vDpo-ZqWeL5vSX-kLTYhUYpsX_JN&s=5XtcZc_UuhVMFxM1vGQJOqFs7FPgPLxpwGKsa89w9cg&e= )
+* [Cleaned-Followup-2](https://urldefense.proofpoint.com/v2/url?u=https-3A__github.com_sallietsang_HEEAR-2DDATASET-2D_blob_main_-25232017-2D2121-2DFollowup2.csv&d=DwIGaQ&c=shNJtf5dKgNcPZ6Yh64b-ALLUrcfR-4CCQkZVKC8w3o&r=dBSsZgqxtO-ClnLzRxog8FGbomoH4dWCe7-KTJn0zIU&m=ZXzJ6b8NE3kfTEMSND-yAxV2dHqDIxrHwXB0vDpo-ZqWeL5vSX-kLTYhUYpsX_JN&s=FQNbqRgNQp5BwQxwv_zesm1a8ctT8gBd8517XL8qyKg&e= )
+* [Cleaned-Followup-3](https://urldefense.proofpoint.com/v2/url?u=https-3A__github.com_sallietsang_HEEAR-2DDATASET-2D_blob_main_-25232017-2D2121-2DFollowup3.csv&d=DwIGaQ&c=shNJtf5dKgNcPZ6Yh64b-ALLUrcfR-4CCQkZVKC8w3o&r=dBSsZgqxtO-ClnLzRxog8FGbomoH4dWCe7-KTJn0zIU&m=ZXzJ6b8NE3kfTEMSND-yAxV2dHqDIxrHwXB0vDpo-ZqWeL5vSX-kLTYhUYpsX_JN&s=RPUbRSLzdfXPQARxfXTHsTb4MSx8QRQVq3hzJyge3Yc&e= )
+
+```{r}
+selectInput("categorical_variable_p1",
+            label = "A: Categorical Variable", 
+            list(`Individual Characteristics ` = list("Sex" = "sex",
+                                                      "Race "= "race",
+                                                      "Ethnicity" =  "ethnicity",
+                                                      "Phenotype" = "phenotype"),
+                  `Experimental Group` = list("Treatment Group" = "trt_group",
+                                             "Medical Intervention"   =  "medical_intervention"), 
+                  `Clinical Diagnosis` = list("Allergy Test Results" = "allergy_test")), 
+                 selected = "sex"
+  )
+
+
+selectInput("exposure_type_p1",
+            label = "B: Exposure", 
+                  list(`External Measure: Air contaminants` = 
+                  list(`Fine Respirable Suspended Particulate Matter (µg/m³)` = "fine_respirable_suspended_particulate_matter_µg_m3",
+                       `Endotoxin Allergen(Unit/m²)` = "endotoxin_allergen_units_per_square_meter"), 
+                 `Internal Measures: Urine Biomarker` 
+                 = list(`1-Hydroxynaphthalene (ng/mL)` = "1_hydroxynaphthalene_ng_mL", 
+                        `1-Hydroxypyrene (ng/mL)` = "1_hydroxypyrene_ng_mL",				
+                        `2-Hydroxynaphthalene (ng/mL)` = "2_hydroxynaphthalene_ng_mL",		
+                        `3,5,6-Trichloro-2-Pyridinol (ng/mL)` = "3_5_6_trichloro_2_pyridinol_ng_mL",				
+                        `3-Phenoxybenzoic Acid (ng/mL)` = "3_phenoxybenzoic_acid_ng_mL",
+                        `Benzophenone-3 (ng/mL)` = "benzophenone_3_ng_mL",			
+                        `Bisphenol A (ng/mL)` = "bisphenol_a_ng_mL",				
+                        `Bisphenol F (ng/mL)` = "bisphenol_f_ng_mL", 
+                        `Bisphenol S (ng/mL)` = "bisphenol_s_ng_mL",			
+                        `Butyl Paraben (ng/mL)` = "butyl_paraben_ng_mL",		
+                        `Creatinine (mg/dL)` = "creatinine_milligram_per_deciliter",				
+                        `Diethylphosphate (ng/mL)` = "diethylphosphate_ng_mL",				
+                        `Diethylthiophosphate (ng/mL)` = "diethylthiophosphate_ng_mL",				
+                        `Dimethylthiophosphate (ng/mL)` = "dimethylthiophosphate_ng_mL",				
+                        `Dimethylthiophosphate (ng/mL)` = "dimethylthiophosphate_ng_mL",		
+                        `Ethyl Paraben (ng/mL)` = "ethyl_paraben_ng_mL",	
+                        `Methyl Paraben (ng/mL)` = "methyl_paraben_ng_mL",
+                        `Mono(2-ethyl-5-hydroxyhexyl) Phthalate (ng/mL)` = "mono_2_ethyl_5_hydroxyhexyl_phthalate_ng_mL",				
+                        `Mono(2-ethyl-5-oxohexyl) Phthalate (ng/mL)` = "mono_2_ethyl_5_oxohexyl_phthalate_ng_mL",				
+                        `Mono(3-carboxypropyl) Phthalate (multiple) (ng/mL)` = "mono_3_carboxypropyl_phthalate_multiple_ng_mL",					
+                        `Mono(5-carboxy-2-ethylpentyl) Phthalate (DEHP) (ng/mL)` = "mono_5_carboxy_2_ethylpentyl_phthalate_dehp_ng_mL",				
+                        `Mono-Benzyl Phthalate (BzBP) (ng/mL)` = "mono_benzyl_phthalate_bz_bp_ng_mL",				
+                    "Mono-carboxy-isononyl phthalate (ng/mL)" = "mono_carboxy_isononyl_phthalate_ng_mL"	,		
+                    "Mono-carboxy-isooctyl phthalate (ng/mL)" = "mono_carboxy_isooctyl_phthalate_ng_mL"	,		
+                    "Mono-isobutyl phthalate (di-BP) (ng/mL)"= "mono_isobutyl_phthalate_di_bp_ng_mL",				
+              "Mono-n-butyl phthalate (Bz-BP, Dn-BP) (ng/mL)"   = "mono_n_butylphthalate_bz_bp_dn_bp_ng_mL",				        "Mono(2-ethylhexyl) phthalate (ng/mL)" = "mono2_ethylhexyl_phthalate_ng_mL",
+                       "Monoethyl phthalate (DEP) (ng/mL)" = "monoethyl_phthalate_dep_ng_mL",				
+                        "Propyl paraben (ng/mL)" = "propyl_paraben_ng_mL",				
+                       "Triclocarban (ng/mL)" =  "triclocarban_ng_mL",			
+                        "Triclosan (ng/mL)" = "triclosan_ng_mL")), 
+            selected = "1_hydroxynaphthalene_ng_mL")
+
+selectInput("response_type_p1",
+            label = "C: Response", 
+            list(` Measures of Oxidative Stress` = 
+            list( "8-hydroxy-2-deoxyguanosine (ng/mL)"= "8_hydroxy_2_deoxyguanosine_ng_mL",
+                  "8-iso-prostaglandin F2 alpha (ng/mL)" = "8_iso_prostaglandin_f2_alpha_ng_mL", 
+                  "Leukotriene E4 (ng/mL)" = "leukotriene_e4_ng_mL")), 
+                 selected = "_8_hydroxy_2_deoxyguanosine" )
+
+radioButtons("last_plot", 
+             label = "D: Mean Concentration", 
+              choices = c("Exposure:Urine Biomarker" = "urine", 
+                          "Exposure:Air Pollutant" = "air" , 
+                          "Response: Oxidative Stress" = "stress"), 
+             selected = "urine")
+
+radioButtons("time_p1", 
+             label = "Experimental Time Point", 
+              choices = c("Baseline" = "baseline", 
+                          "Followup" = "followup", 
+                          "Followup_2" = "followup_2", 
+                          "Followup_3"  = "followup_3"), 
+             selected = "baseline")
+```
+
+*Note: Air pollutant exposure data is only available at the baseline*
+
+Row{data-height=50}
+--------
+### Sample Size  %{data-width=15%}
+```{r}
+renderValueBox({
+valueBox(value =79, 
+         caption = "Child Participants <br>", 
+     icon="fa-users",
+     color = "navy")
+     })
+```
+
+### Week %{data-width=15%}
+```{r}
+renderValueBox({
+valueBox(value = 1, 
+         caption = "Year Follow Up", 
+     icon="fa-clock", 
+     color = "#889BAE")
+     })
+```
+
+### About the Study 
+The Dynamics of Exposure, Phthalates, and Asthma project (DEPART) utilizes data and samples collected within the Home Air in Agriculture Pediatric Intervention Trial (HAPI, NIEHS R01 ES023510). The participants are 70 Latino children with asthma aged 6-12 years who reside in rural, agricultural central WA State. They were recruited from 2015-2017 for a one-year follow up period of their asthma morbidity following randomization into a control group (education) or intervention (education plus 2 in home portable HEPA air cleaners). Follow assessments include 2 time points prior to randomization and 2 post randomization and includes collection of urine specimens. DEPART’s objective is to **examine associations between urinary biomarkers for emerging contaminants of concern – phthalates, pesticides, and phenols and biomarkers of oxidative stress and inflammation in this population**. DEPART also includes metabolomic profiling to investigate potential additional biological mechanisms of toxicity associated with these exposures.
+
+
+###  A: Sample Size Distribution 
+```{r}
+#should we consider adding none here so we can look at the age and weight dis more clearly
+renderPlotly({
+  
+
+depart_baseline %>%  
+    select(human_id, !!input$categorical_variable_p1) %>% 
+   group_by_(input$categorical_variable_p1)%>% 
+  summarise(count=n()) %>% 
+plot_ly(labels = ~get(input$categorical_variable_p1), values = ~count, type = 'pie',
+        textposition = 'inside',
+        textinfo = 'label+percent',
+        insidetextfont = list(color = '#FFFFFF'))%>%
+    layout(showlegend = TRUE, legend = list(font = list(size = 8), x = 0.8, y = 0.1), 
+           height = 150)
+
+ })
+
+
+```
+Row{data-height=50}
+--------
+
+### Number of Exposure   %{data-width=35%}
+```{r}
+renderValueBox({
+valueBox(value =tags$p( "Total 32 Exposures ", style = "font-size: 70%;"), 
+         caption = "Include Urine Biomarker & Air Pollutant Measuremnt", 
+     icon="fa-flask", 
+     color = "#89CFF0")
+     })
+```
+
+### Number of Exposure  %{data-width=35%}
+```{r}
+renderValueBox({
+valueBox(value = 30, 
+         caption = "Urine Biomarker Exposure ", 
+     icon="fa-flask", 
+     color = "#73c2fb")
+     })
+```
+
+
+
+### Number of Exposure %{data-width=30%}
+```{r}
+renderValueBox({
+valueBox(value = 2, 
+         caption = "Indoor Air Pollutants Exposure ", 
+     icon="fa-sun", 
+     color = "#73c2fb")
+     })
+```
+
+
+
+### <span style='font-size:15px;color: #73c2fb;font-weight:bold;'>B: Description of Exposure</span> 
+```{r}
+# Define the description box output with HTML and CSS styles
+output$description_box <- renderUI({
+  div(
+    print(switch(input$exposure_type_p1,
+                 "fine_respirable_suspended_particulate_matter_µg_m3" = "Fine Respirable Suspended Particulate Matter is a type of air pollutant that includes particles with a diameter of 2.5 micrometers or less.", 
+                 "endotoxin_allergen_units_per_square_meter" = "Endotoxin Allergen Units per Square Meter is a unit of measurement used to quantify the level of endotoxin allergens present in a given area, typically in indoor environments such as homes or workplaces.Endotoxins are bacterial toxins that can cause respiratory problems, and they are commonly found in dust and other indoor contaminants. The higher the level of endotoxin allergens, the greater the risk of developing respiratory issues.",
+             "1_hydroxynaphthalene_ng_mL" = "1-hydroxynaphthalene (1-HN) is a biomarker for exposure to polycyclic aromatic hydrocarbons (PAHs), which are common environmental pollutants. 1-HN is a metabolite of naphthalene, a PAH found in tobacco smoke, vehicle exhaust, and other combustion processes. The concentration of 1-HN in urine is often used as a biomarker for occupational or environmental exposure to PAHs ", 
+                 "1_hydroxypyrene_ng_mL"= "1-hydroxypyrene is a metabolite of pyrene, which is a polycyclic aromatic hydrocarbon (PAH) found in combustion products such as tobacco smoke and diesel exhaust. The level of 1-hydroxypyrene in urine is a biomarker of exposure to pyrene",				
+                      "2_hydroxynaphthalene_ng_mL"= "2-hydroxynaphthalene (2-OH-Nap) is a metabolite of naphthalene, a common air pollutant. The concentration of 2-OH-Nap in urine can be used as a biomarker of exposure to naphthalene ",		
+                     "3_5_6_trichloro_2_pyridinol_ng_mL"= "3,5,6-Trichloro-2-pyridinol (TCPy) is a metabolite of chlorpyrifos, a common pesticide. It is often measured in urine samples as a biomarker of exposure to chlorpyrifos",				
+                        "3_phenoxybenzoic_acid_ng_mL"= "3-Phenoxybenzoic acid (3PBA) is a metabolite of pyrethroid insecticides, and it can be measured in urine as an indicator of exposure to pyrethroids",
+                   "benzophenone_3_ng_mL"= "Benzophenone-3 (BP-3) is a common sunscreen ingredient that can be measured in biological samples like urine",			
+                       "bisphenol_a_ng_mL"= "Bisphenol A (BPA) is an industrial chemical that is used in the production of certain plastics and epoxy resins",				
+                     "bisphenol_f_ng_mL"= "Bisphenol F (BPF) is a chemical compound that is similar in structure to bisphenol A (BPA). It is used primarily in the production of polycarbonate plastics and epoxy resins", 
+                        "bisphenol_s_ng_mL"= "Bisphenol S (BPS) is a chemical compound that is structurally similar to Bisphenol A (BPA).BPS is considered an endocrine disruptor and has been linked to potential health effects such as reproductive and developmental problems, although further research is needed to fully understand its health effects",			
+                     "butyl_paraben_ng_mL"= "Butyl paraben is a chemical commonly used as a preservative in cosmetics and personal care products. It is a type of paraben, which is a group of chemicals that are used to prevent the growth of bacteria and fungi in products such as lotions, shampoos, and makeup",		
+                         "creatinine_milligram_per_deciliter"= "Creatinine is a waste product that is produced by the muscles during the normal process of metabolism. It is removed from the body by the kidneys and excreted in urine. Creatinine clearance is a measure of kidney function, and the level of creatinine in the blood can be used to estimate how well the kidneys are functioning.The normal range for creatinine in the blood is around 0.6 to 1.2 milligrams per deciliter (mg/dL) for men and 0.5 to 1.1 mg/dL for women.",				
+                      "diethylphosphate_ng_mL"= "Diethylphosphate is a metabolite of organophosphate insecticides and herbicides, so its presence in urine can indicate exposure to these chemicals",				
+                       "diethylthiophosphate_ng_mL"= "Diethylthiophosphate is a chemical compound that belongs to the class of organophosphorus compounds. It is commonly used as an insecticide and fungicide in agricultural and household settings. In urine biomonitoring, the concentration of diethylthiophosphate can indicate recent exposure to organophosphate pesticides",				
+                     "dimethylthiophosphate_ng_mL"= "Dimethylthiophosphate is a pesticide metabolite and is commonly used as a biomarker for exposure to organophosphate pesticides",				
+                      "ethyl_paraben_ng_mL"= "Ethyl paraben is a type of paraben commonly used as a preservative in personal care products, foods, and pharmaceuticals",	
+                        "methyl_paraben_ng_mL"= "Methyl paraben is a type of paraben, which is a preservative commonly used in cosmetics, food products, and pharmaceuticals. It is used to prevent the growth of bacteria and fungus in various products",
+                      "mono_2_ethyl_5_hydroxyhexyl_phthalate_ng_mL"= "Mono(2-ethyl-5-hydroxyhexyl) phthalate (MEHHP) is a metabolite of the plasticizer chemical DEHP (di-2-ethylhexyl phthalate).MEHHP is considered to be a potential endocrine disruptor and has been linked to various health effects including reproductive and developmental toxicity.",				
+                      "mono_2_ethyl_5_oxohexyl_phthalate_ng_mL"= "Mono(2-ethyl-5-oxohexyl) phthalate is a phthalic acid monoester obtained by formal condensation of one of the carboxy groups of phthalic acid with the hydroxy group of 2-ethyl-5-oxohexan-1-ol. It has a role as a human xenobiotic metabolite and a human urinary metabolite",				
+                       "mono_3_carboxypropyl_phthalate_multiple_ng_mL"= "Mono(3-carboxypropyl) phthalate is a phthalic acid monoester obtained by formal condensation of one of the carboxy groups of phthalic acid with the hydroxy group of 4-hydroxybutyric acid. It has a role as a human urinary metabolite and a human xenobiotic metabolite",				
+                      "mono_5_carboxy_2_ethylpentyl_phthalate_dehp_ng_mL"= "Mono(5-carboxy-2-ethylpentyl) phthalate (MECPP) is a metabolite of di(2-ethylhexyl) phthalate (DEHP), which is a plasticizer commonly used in many consumer products. MECPP can be used as a biomarker of exposure to DEHP.",		
+                   "mono_benzyl_phthalate_bz_bp_ng_mL"= "Mono-benzyl phthalate (BzBP) is a phthalate ester that is used as a plasticizer, it has been found to have potential endocrine-disrupting effects and is a suspected reproductive toxicant. It is measured in biological samples such as urine or serum",				
+              "mono_carboxy_isononyl_phthalate_ng_mL"= "Mono Carboxy Isononyl Phthalate is used to assess exposure to this particular phthalate compound in individuals"	,		
+                "mono_carboxy_isooctyl_phthalate_ng_mL"	= "A urinary biomarker used to assess exposure to phthalates",		
+              "mono_isobutyl_phthalate_di_bp_ng_mL"= "Mono-isobutyl phthalate (MiBP) is a metabolite of di-iso-butyl phthalate (DiBP) which is used as a plasticizer in some polyvinyl chloride (PVC) materials, including vinyl flooring and some children's toys. It is a chemical that can be measured in urine to estimate exposure to DiBP",				
+               "mono_n_butylphthalate_bz_bp_dn_bp_ng_mL"= "mono-n-butyl phthalate (MnBP) is a metabolite of di-n-butyl phthalate (DnBP), a chemical commonly used in the production of plastics and as a solvent in many industrial processes. MnBP is considered a biomarker of exposure to DnBP and has been associated with adverse health effects, such as endocrine disruption and reproductive toxicity.",				   
+         "mono2_ethylhexyl_phthalate_ng_mL"= "Mono(2-ethylhexyl) phthalate (MEHP) is a metabolite of di(2-ethylhexyl) phthalate (DEHP), a common plasticizer used in the production of PVC products. MEHP can be measured in biological samples, such as urine or serum, and is considered a biomarker of DEHP exposure",
+                      "monoethyl_phthalate_dep_ng_mL"= "Monoethyl phthalate (MEP) is a metabolite of diethyl phthalate (DEP),it can be measured in urine as a biomarker of DEP exposure",				
+                       "propyl_paraben_ng_mL"= "Propyl paraben is a chemical compound commonly used as a preservative in various personal care products and food products",				
+                     "triclocarban_ng_mL"= "Triclocarban_ng_mL is a unit of measurement for the concentration of triclocarban, which is a common antimicrobial agent used in personal care products like soaps and body washes. ",			
+                      "triclosan_ng_mL" = "Triclosan_ng_mL is a unit of measurement for the concentration of triclosan, a synthetic antibacterial and antifungal agent commonly used in personal care and household products. ")),
+    style = "background-color: #73c2fb;
+            font-family: Arial, sans-serif;
+             padding: 10px;
+             font-size: 12px;
+             border-radius: 5px;
+             box-shadow: 2px 2px 5px #888888;
+             height: 100px;
+             font-weight: bold;
+            overflow-y: scroll;"
+  )
+})
+
+# Display the description box output
+uiOutput("description_box")
+```
+
+Row {data-height=20}
+-----------------------------------------------------------------------
+
+
+###  Number of Response 
+```{r}
+renderValueBox({
+valueBox(value = tags$p("3 Oxidative Stress Response", style = "font-size: 55%;"), 
+         caption = "A biological process that occurs when there is an imbalance between the production and accumulation of oxygen reactive species.Failure to counteract the excessive ROS production may lead to cellular damage and contribute to the development of several diseases, including cardiovascular diseases,and neurodegenerative disorders", 
+     icon="fa-tired", 
+     color ="#4692b4")
+     })
+
+```
+
+###  <span style='font-size:15px;color: #4692b4;font-weight:bold;'>C: Description of Response</span> 
+```{r}
+# Define the description box output with HTML and CSS styles
+output$description_box2 <- renderUI({
+  div(
+    print(switch(input$response_type_p1,
+              "8_hydroxy_2_deoxyguanosine_ng_mL" = "A biomarker of oxidative DNA damage, known as a useful marker for assessing oxidative DNA damage.Elevated levels of 8-OHdG are associated with various conditions related to oxidative stress, such as cancer, neurodegenerative diseases, and cardiovascular diseases",
+              "8_iso_prostaglandin_f2_alpha_ng_mL" = "A type of prostaglandin produced by the oxidation of arachidonic acid by cyclooxygenase enzymes. Elevated levels of PGF2α are associated with inflammation and oxidative stress, and have been implicated as markers of the oxidative stress in significant coronary artery disease (CAD)", 
+              "leukotriene_e4_ng_mL" = "A type of leukotriene produced by the oxidation of arachidonic acid by lipoxygenase enzymes. Elevated levels of LTE4 are associated with inflammation and oxidative stress, and have been implicated in the development of several diseases, including asthma, allergic rhinitis, and cardiovascular diseases")),
+    style = "background-color: #4692b4;
+            font-family: Arial, sans-serif;
+             padding: 10px;
+             font-size: 13px;
+             border-radius: 5px;
+             box-shadow: 2px 2px 5px #888888;
+             height: 130px;
+             font-weight: bold;
+            overflow-y: scroll;"
+  )
+})
+
+# Display the description box output
+uiOutput("description_box2")
+```
+ 
+
+Row 
+-----------------------------------------------------------------------
+###  D: Mean Concentration of Exposure/Response  
+```{r}
+renderPlotly({
+  
+  
+  if (input$time_p1== "baseline" & input$last_plot == "urine"){ 
+
+p= depart_baseline %>% 
+  select(- X8_hydroxy_2_deoxyguanosine_ng_mL, -X8_iso_prostaglandin_f2_alpha_ng_mL, -leukotriene_e4_ng_mL) %>%   
+  select(X1_hydroxynaphthalene_ng_mL:triclosan_ng_mL) %>% 
+  summarise_all(mean, na.rm = TRUE) %>%
+  pivot_longer(
+    cols = c(X1_hydroxynaphthalene_ng_mL:triclosan_ng_mL), 
+    names_to = "urine_biomarker", 
+    values_to = "avg_conc"
+  ) %>% 
+  arrange(avg_conc) %>% 
+  plot_ly(
+    x = ~urine_biomarker, 
+    y = ~avg_conc, 
+    type = "bar",
+    color = ~urine_biomarker
+  ) %>% 
+  layout(
+    xaxis = list(
+      tickmode = "array",
+      title = "Urine Biomakers",
+      tickvals = list()
+    ),
+    yaxis = list(
+      title = "Avg con", 
+      tickfont = list(size = 8)
+    ),
+    bargap = 0.05,
+    showlegend = TRUE, 
+    legend = list(font = list(size = 8))
+  )
+  }
+  
+   if (input$time_p1== "followup" & input$last_plot == "urine"){ 
+
+p= depart_followup %>% 
+  select(- X8_hydroxy_2_deoxyguanosine_ng_mL, -X8_iso_prostaglandin_f2_alpha_ng_mL, -leukotriene_e4_ng_mL) %>%   
+  select(X1_hydroxynaphthalene_ng_mL:triclosan_ng_mL) %>% 
+  summarise_all(mean, na.rm = TRUE) %>%
+  pivot_longer(
+    cols = c(X1_hydroxynaphthalene_ng_mL:triclosan_ng_mL), 
+    names_to = "urine_biomarker", 
+    values_to = "avg_conc"
+  ) %>% 
+  arrange(avg_conc) %>% 
+  plot_ly(
+    x = ~urine_biomarker, 
+    y = ~avg_conc, 
+    type = "bar",
+    color = ~urine_biomarker
+  ) %>% 
+  layout(
+    xaxis = list(
+      tickmode = "array",
+      title = "Urine Biomakers",
+      tickvals = list()
+    ),
+    yaxis = list(
+      title = "Avg con", 
+      tickfont = list(size = 8)
+    ),
+    bargap = 0.05,
+    showlegend = TRUE, 
+    legend = list(font = list(size = 8))
+  )
+   }
+   if (input$time_p1== "followup_2" & input$last_plot == "urine"){ 
+
+p= depart_followup_2 %>% 
+  select(- X8_hydroxy_2_deoxyguanosine_ng_mL, -X8_iso_prostaglandin_f2_alpha_ng_mL, -leukotriene_e4_ng_mL) %>%   
+  select(X1_hydroxynaphthalene_ng_mL:triclosan_ng_mL) %>% 
+  summarise_all(mean, na.rm = TRUE) %>%
+  pivot_longer(
+    cols = c(X1_hydroxynaphthalene_ng_mL:triclosan_ng_mL), 
+    names_to = "urine_biomarker", 
+    values_to = "avg_conc"
+  ) %>% 
+  arrange(avg_conc) %>% 
+  plot_ly(
+    x = ~urine_biomarker, 
+    y = ~avg_conc, 
+    type = "bar",
+    color = ~urine_biomarker
+  ) %>% 
+  layout(
+    xaxis = list(
+      tickmode = "array",
+      title = "Urine Biomakers",
+      tickvals = list()
+    ),
+    yaxis = list(
+      title = "Avg con", 
+      tickfont = list(size = 8)
+    ),
+    bargap = 0.05,
+    showlegend = TRUE, 
+    legend = list(font = list(size = 8))
+  )
+   }
+   if (input$time_p1== "followup_3" & input$last_plot == "urine"){ 
+
+p= depart_followup_3 %>% 
+  select(- X8_hydroxy_2_deoxyguanosine_ng_mL, -X8_iso_prostaglandin_f2_alpha_ng_mL, -leukotriene_e4_ng_mL) %>%   
+  select(X1_hydroxynaphthalene_ng_mL:triclosan_ng_mL) %>% 
+  summarise_all(mean, na.rm = TRUE) %>%
+  pivot_longer(
+    cols = c(X1_hydroxynaphthalene_ng_mL:triclosan_ng_mL), 
+    names_to = "urine_biomarker", 
+    values_to = "avg_conc"
+  ) %>% 
+  arrange(avg_conc) %>% 
+  plot_ly(
+    x = ~urine_biomarker,
+    y = ~avg_conc, 
+    type = "bar",
+    color = ~urine_biomarker
+  ) %>% 
+  layout(
+    xaxis = list(
+      tickmode = "array",
+      title = "Urine Biomakers",
+      tickvals = list()
+    ),
+    yaxis = list(
+      title = "Avg con", 
+      tickfont = list(size = 8)
+    ),
+    bargap = 0.05,
+    showlegend = TRUE, 
+    legend = list(font = list(size = 8))
+  )
+   }
+  
+   if (input$time_p1== "baseline" & input$last_plot == "stress"){ 
+
+p= depart_baseline %>% 
+  select( X8_hydroxy_2_deoxyguanosine_ng_mL, X8_iso_prostaglandin_f2_alpha_ng_mL, leukotriene_e4_ng_mL) %>% 
+  summarise_all(mean, na.rm = TRUE) %>%
+  pivot_longer(
+    cols = c(X8_hydroxy_2_deoxyguanosine_ng_mL, X8_iso_prostaglandin_f2_alpha_ng_mL, leukotriene_e4_ng_mL), 
+    names_to = "oxidative_stress", 
+    values_to = "avg_conc"
+  ) %>% 
+  arrange(avg_conc) %>% 
+  plot_ly(
+    x = ~oxidative_stress, 
+    y = ~avg_conc, 
+    type = "bar",
+    color = ~oxidative_stress
+  ) %>% 
+  layout(
+    xaxis = list(
+      tickmode = "array",
+      title = "Oxidative Stress",
+      tickvals = list()
+    ),
+    yaxis = list(
+      title = "Avg con", 
+      tickfont = list(size = 8)
+    ),
+    bargap = 0.05,
+    showlegend = TRUE, 
+    legend = list(font = list(size = 8))
+  )
+   }
+  
+  if (input$time_p1== "followup" & input$last_plot == "stress"){ 
+
+p= depart_followup %>% 
+  select( X8_hydroxy_2_deoxyguanosine_ng_mL, X8_iso_prostaglandin_f2_alpha_ng_mL, leukotriene_e4_ng_mL) %>% 
+  summarise_all(mean, na.rm = TRUE) %>%
+  pivot_longer(
+    cols = c(X8_hydroxy_2_deoxyguanosine_ng_mL, X8_iso_prostaglandin_f2_alpha_ng_mL, leukotriene_e4_ng_mL), 
+    names_to = "oxidative_stress", 
+    values_to = "avg_conc"
+  ) %>% 
+  arrange(avg_conc) %>% 
+  plot_ly(
+    x = ~oxidative_stress, 
+    y = ~avg_conc, 
+    type = "bar",
+    color = ~oxidative_stress
+  ) %>% 
+  layout(
+    xaxis = list(
+      tickmode = "array",
+       title = "Oxidative Stress",
+      tickvals = list()
+    ),
+    yaxis = list(
+      title = "Avg con", 
+      tickfont = list(size = 8)
+    ),
+    bargap = 0.05,
+    showlegend = TRUE, 
+    legend = list(font = list(size = 8))
+  )
+  }
+  if (input$time_p1== "followup_2" & input$last_plot == "stress"){ 
+
+p= depart_followup_2 %>% 
+  select( X8_hydroxy_2_deoxyguanosine_ng_mL, X8_iso_prostaglandin_f2_alpha_ng_mL, leukotriene_e4_ng_mL) %>% 
+  summarise_all(mean, na.rm = TRUE) %>%
+  pivot_longer(
+    cols = c(X8_hydroxy_2_deoxyguanosine_ng_mL, X8_iso_prostaglandin_f2_alpha_ng_mL, leukotriene_e4_ng_mL), 
+    names_to = "oxidative_stress", 
+    values_to = "avg_conc"
+  ) %>% 
+  arrange(avg_conc) %>% 
+  plot_ly(
+    x = ~oxidative_stress, 
+    y = ~avg_conc, 
+    type = "bar",
+    color = ~oxidative_stress
+  ) %>% 
+  layout(
+    xaxis = list(
+      tickmode = "array",
+       title = "Oxidative Stress",
+      tickvals = list()
+    ),
+    yaxis = list(
+      title = "Avg con", 
+      tickfont = list(size = 8)
+    ),
+    bargap = 0.05,
+    showlegend = TRUE, 
+    legend = list(font = list(size = 8))
+  )
+  }
+  if (input$time_p1== "followup_3" & input$last_plot == "stress"){ 
+
+p= depart_followup_3 %>% 
+  select( X8_hydroxy_2_deoxyguanosine_ng_mL, X8_iso_prostaglandin_f2_alpha_ng_mL, leukotriene_e4_ng_mL) %>% 
+  summarise_all(mean, na.rm = TRUE) %>%
+  pivot_longer(
+    cols = c(X8_hydroxy_2_deoxyguanosine_ng_mL, X8_iso_prostaglandin_f2_alpha_ng_mL, leukotriene_e4_ng_mL), 
+    names_to = "oxidative_stress", 
+    values_to = "avg_conc"
+  ) %>% 
+  arrange(avg_conc) %>% 
+  plot_ly(
+    x = ~oxidative_stress, 
+    y = ~avg_conc, 
+    type = "bar",
+    color = ~oxidative_stress
+  ) %>% 
+  layout(
+    xaxis = list(
+      tickmode = "array",
+       title = "Oxidative Stress",
+      tickvals = list()
+    ),
+    yaxis = list(
+      title = "Avg con", 
+      tickfont = list(size = 8)
+    ),
+    bargap = 0.05,
+    showlegend = TRUE, 
+    legend = list(font = list(size = 8))
+  )
+  }
+  
+  if (input$time_p1== "baseline" & input$last_plot == "air"){ 
+ 
+p= depart_baseline %>% 
+  select(fine_respirable_suspended_particulate_matter_µg_m3, endotoxin_allergen_units_per_square_meter ) %>% 
+  summarise_all(mean, na.rm = TRUE) %>%
+  pivot_longer(
+    cols = c(fine_respirable_suspended_particulate_matter_µg_m3, endotoxin_allergen_units_per_square_meter), 
+    names_to = "air_pollutant", 
+    values_to = "avg_conc"
+  ) %>% 
+  arrange(avg_conc) %>% 
+  plot_ly(
+    x = ~air_pollutant, 
+    y = ~avg_conc, 
+    type = "bar",
+    color = ~air_pollutant
+  ) %>% 
+  layout(
+    xaxis = list(
+      tickmode = "array",
+       title = "Air Pollutant",
+      tickvals = list()
+    ),
+    yaxis = list(
+      title = "Avg con", 
+      tickfont = list(size = 8)
+    ),
+    bargap = 0.05,
+    showlegend = TRUE, 
+    legend = list(font = list(size = 8))
+  )
+  }
+  if (input$time_p1== "followup" & input$last_plot == "air"){ 
+ 
+   p=NULL
+
+  }
+   if (input$time_p1== "followup_2" & input$last_plot == "air"){ 
+ 
+   p=NULL
+
+   }
+   if (input$time_p1== "followup_3" & input$last_plot == "air"){ 
+ 
+   p=NULL
+
+  }
+  p
+})
+```
+
+
+Association
+===================================== 
+
+Inputs {.sidebar}
+-----------------------------------------------------------------------
+##### The Dynamics of Exposure, Phthalates and Asthma in a Randomized Trial (DEPART)
+```{r}
+selectInput("exposure_type_p2",
+            label = "Exposure", 
+                  list(`External Measure: Air contaminants` = 
+                  list(`Fine Respirable Suspended Particulate Matter (µg/m³)` = "fine_respirable_suspended_particulate_matter_µg_m3",
+                       `Endotoxin Allergen(Unit/m²)` = "endotoxin_allergen_units_per_square_meter"), 
+                 `Internal Measures: Urine Biomarker` 
+                 = list(`1-Hydroxynaphthalene (ng/mL)` = "X1_hydroxynaphthalene_ng_mL", 
+                        `1-Hydroxypyrene (ng/mL)` = "X1_hydroxypyrene_ng_mL",				
+                        `2-Hydroxynaphthalene (ng/mL)` = "X2_hydroxynaphthalene_ng_mL",		
+                        `3,5,6-Trichloro-2-Pyridinol (ng/mL)` = "X3_5_6_trichloro_2_pyridinol_ng_mL",				
+                        `3-Phenoxybenzoic Acid (ng/mL)` = "X3_phenoxybenzoic_acid_ng_mL",
+                        `Benzophenone-3 (ng/mL)` = "benzophenone_3_ng_mL",			
+                        `Bisphenol A (ng/mL)` = "bisphenol_a_ng_mL",				
+                        `Bisphenol F (ng/mL)` = "bisphenol_f_ng_mL", 
+                        `Bisphenol S (ng/mL)` = "bisphenol_s_ng_mL",			
+                        `Butyl Paraben (ng/mL)` = "butyl_paraben_ng_mL",		
+                        `Creatinine (mg/dL)` = "creatinine_milligram_per_deciliter",				
+                        `Diethylphosphate (ng/mL)` = "diethylphosphate_ng_mL",				
+                        `Diethylthiophosphate (ng/mL)` = "diethylthiophosphate_ng_mL",				
+                        `Dimethylthiophosphate (ng/mL)` = "dimethylthiophosphate_ng_mL",				
+                        `Dimethylthiophosphate (ng/mL)` = "dimethylthiophosphate_ng_mL",		
+                        `Ethyl Paraben (ng/mL)` = "ethyl_paraben_ng_mL",	
+                        `Methyl Paraben (ng/mL)` = "methyl_paraben_ng_mL",
+                        `Mono(2-ethyl-5-hydroxyhexyl) Phthalate (ng/mL)` = "mono_2_ethyl_5_hydroxyhexyl_phthalate_ng_mL",				
+                        `Mono(2-ethyl-5-oxohexyl) Phthalate (ng/mL)` = "mono_2_ethyl_5_oxohexyl_phthalate_ng_mL",				
+                        `Mono(3-carboxypropyl) Phthalate (multiple) (ng/mL)` = "mono_3_carboxypropyl_phthalate_multiple_ng_mL",					
+                        `Mono(5-carboxy-2-ethylpentyl) Phthalate (DEHP) (ng/mL)` = "mono_5_carboxy_2_ethylpentyl_phthalate_dehp_ng_mL",				
+                        `Mono-Benzyl Phthalate (BzBP) (ng/mL)` = "mono_benzyl_phthalate_bz_bp_ng_mL",				
+                    "Mono-carboxy-isononyl phthalate (ng/mL)" = "mono_carboxy_isononyl_phthalate_ng_mL"	,		
+                    "Mono-carboxy-isooctyl phthalate (ng/mL)" = "mono_carboxy_isooctyl_phthalate_ng_mL"	,		
+                    "Mono-isobutyl phthalate (di-BP) (ng/mL)"= "mono_isobutyl_phthalate_di_bp_ng_mL",				
+              "Mono-n-butyl phthalate (Bz-BP, Dn-BP) (ng/mL)"   = "mono_n_butylphthalate_bz_bp_dn_bp_ng_mL",				        "Mono(2-ethylhexyl) phthalate (ng/mL)" = "mono2_ethylhexyl_phthalate_ng_mL",
+                       "Monoethyl phthalate (DEP) (ng/mL)" = "monoethyl_phthalate_dep_ng_mL",				
+                        "Propyl paraben (ng/mL)" = "propyl_paraben_ng_mL",				
+                       "Triclocarban (ng/mL)" =  "triclocarban_ng_mL",			
+                        "Triclosan (ng/mL)" = "triclosan_ng_mL")), 
+            selected = "1_hydroxynaphthalene_ng_mL")
+
+
+
+selectInput("response_type_p2",
+            label = " Response", 
+            list(` Measures of Oxidative Stress` = 
+            list( "8-hydroxy-2-deoxyguanosine (ng/mL)"= "X8_hydroxy_2_deoxyguanosine_ng_mL",
+                  "8-iso-prostaglandin F2 alpha (ng/mL)" = "X8_iso_prostaglandin_f2_alpha_ng_mL", 
+                  "Leukotriene E4 (ng/mL)" = "leukotriene_e4_ng_mL")), 
+                 selected = "_8_hydroxy_2_deoxyguanosine" )
+
+
+sliderInput("resp_conc_range", 
+    label = "Oxidative Stress Concentration", 
+    max= 10, 
+    min= 0, 
+    value = c(0,10))
+
+observeEvent(input$response_type_p2,{
+
+  range = c(0,25)
+
+  if(input$response_type_p2 == "X8_hydroxy_2_deoxyguanosine_ng_mL") {
+    range = c(24.28,442.41)
+  } 
+   else if(input$response_type_p2== "X8_iso_prostaglandin_f2_alpha_ng_mL") {
+    range = c( 0.067,9.99)
+   }
+  else if(input$response_type_p2==  "leukotriene_e4_ng_mL") {
+    range = c(0.13,4.3)
+  }
+  
+  else {
+    input$response_type_p2
+  }
+   updateSliderInput(session, "resp_conc_range", 
+                    value = range,
+                    min = min(range),
+                    max = max(range))
+})
+  
+selectInput("categorical_variable_p2",
+            label = "Categorical Variable", 
+            list(`Individual Characteristics ` = list("Sex" = "sex",
+                                                      "Race "= "race",
+                                                      "Ethnicity" =  "ethnicity",
+                                                      "Phenotype" = "phenotype"),
+                  `Experimental Group` = list("Treatment Group" = "trt_group",
+                    "Medical Intervention"   =  "medical_intervention"), 
+                  `Clinical Diagnosis` = 
+                   list("Allergy Test Results" = "allergy_test")), 
+                 selected = "sex")
+
+radioButtons("time_p2", 
+             label = "Experimental Time Point", 
+              choices = c("Baseline" = "baseline", 
+                          "Followup" = "followup", 
+                          "Followup_2" = "followup_2", 
+                          "Followup_3"  = "followup_3"), 
+             selected = "baseline")
+
+#update event
+
+observeEvent(input$time_p2, {
+
+   chs = if(input$time_p2=="baseline")
+   { 
+      list(`External Measure: Air contaminants` = 
+         list(`Fine Respirable Suspended Particulate Matter (µg/m³)` = "fine_respirable_suspended_particulate_matter_µg_m3",
+              `Endotoxin Allergen(Unit/m²)` = "endotoxin_allergen_units_per_square_meter"), 
+          `Internal Measures: Urine Biomarker` 
+          = list(`1-Hydroxynaphthalene (ng/mL)` = "X1_hydroxynaphthalene_ng_mL", 
+                        `1-Hydroxypyrene (ng/mL)` = "X1_hydroxypyrene_ng_mL",				
+                        `2-Hydroxynaphthalene (ng/mL)` = "X2_hydroxynaphthalene_ng_mL",		
+                        `3,5,6-Trichloro-2-Pyridinol (ng/mL)` = "X3_5_6_trichloro_2_pyridinol_ng_mL",				
+                        `3-Phenoxybenzoic Acid (ng/mL)` = "X3_phenoxybenzoic_acid_ng_mL",
+                        `Benzophenone-3 (ng/mL)` = "benzophenone_3_ng_mL",			
+                        `Bisphenol A (ng/mL)` = "bisphenol_a_ng_mL",				
+                        `Bisphenol F (ng/mL)` = "bisphenol_f_ng_mL", 
+                        `Bisphenol S (ng/mL)` = "bisphenol_s_ng_mL",			
+                        `Butyl Paraben (ng/mL)` = "butyl_paraben_ng_mL",		
+                        `Creatinine (mg/dL)` = "creatinine_milligram_per_deciliter",				
+                        `Diethylphosphate (ng/mL)` = "diethylphosphate_ng_mL",				
+                        `Diethylthiophosphate (ng/mL)` = "diethylthiophosphate_ng_mL",				
+                        `Dimethylthiophosphate (ng/mL)` = "dimethylthiophosphate_ng_mL",				
+                        `Dimethylthiophosphate (ng/mL)` = "dimethylthiophosphate_ng_mL",		
+                        `Ethyl Paraben (ng/mL)` = "ethyl_paraben_ng_mL",	
+                        `Methyl Paraben (ng/mL)` = "methyl_paraben_ng_mL",
+                        `Mono(2-ethyl-5-hydroxyhexyl) Phthalate (ng/mL)` = "mono_2_ethyl_5_hydroxyhexyl_phthalate_ng_mL",				
+                        `Mono(2-ethyl-5-oxohexyl) Phthalate (ng/mL)` = "mono_2_ethyl_5_oxohexyl_phthalate_ng_mL",				
+                        `Mono(3-carboxypropyl) Phthalate (multiple) (ng/mL)` = "mono_3_carboxypropyl_phthalate_multiple_ng_mL",					
+                        `Mono(5-carboxy-2-ethylpentyl) Phthalate (DEHP) (ng/mL)` = "mono_5_carboxy_2_ethylpentyl_phthalate_dehp_ng_mL",				
+                        `Mono-Benzyl Phthalate (BzBP) (ng/mL)` = "mono_benzyl_phthalate_bz_bp_ng_mL",				
+                    "Mono-carboxy-isononyl phthalate (ng/mL)" = "mono_carboxy_isononyl_phthalate_ng_mL"	,		
+                    "Mono-carboxy-isooctyl phthalate (ng/mL)" = "mono_carboxy_isooctyl_phthalate_ng_mL"	,		
+                    "Mono-isobutyl phthalate (di-BP) (ng/mL)"= "mono_isobutyl_phthalate_di_bp_ng_mL",				
+              "Mono-n-butyl phthalate (Bz-BP, Dn-BP) (ng/mL)"   = "mono_n_butylphthalate_bz_bp_dn_bp_ng_mL",				        "Mono(2-ethylhexyl) phthalate (ng/mL)" = "mono2_ethylhexyl_phthalate_ng_mL",
+                       "Monoethyl phthalate (DEP) (ng/mL)" = "monoethyl_phthalate_dep_ng_mL",				
+                        "Propyl paraben (ng/mL)" = "propyl_paraben_ng_mL",				
+                       "Triclocarban (ng/mL)" =  "triclocarban_ng_mL",			
+                        "Triclosan (ng/mL)" = "triclosan_ng_mL"))
+   } else if(input$time_p2=="followup"| input$time_p2 == "followup_2"| input$time_p2 == "followup_3")
+   {
+      list(`Internal Measures: Urine Biomarker` 
+         = list(`1-Hydroxynaphthalene (ng/mL)` = "X1_hydroxynaphthalene_ng_mL", 
+                        `1-Hydroxypyrene (ng/mL)` = "X1_hydroxypyrene_ng_mL",				
+                        `2-Hydroxynaphthalene (ng/mL)` = "X2_hydroxynaphthalene_ng_mL",		
+                        `3,5,6-Trichloro-2-Pyridinol (ng/mL)` = "X3_5_6_trichloro_2_pyridinol_ng_mL",				
+                        `3-Phenoxybenzoic Acid (ng/mL)` = "X3_phenoxybenzoic_acid_ng_mL",
+                        `Benzophenone-3 (ng/mL)` = "benzophenone_3_ng_mL",			
+                        `Bisphenol A (ng/mL)` = "bisphenol_a_ng_mL",				
+                        `Bisphenol F (ng/mL)` = "bisphenol_f_ng_mL", 
+                        `Bisphenol S (ng/mL)` = "bisphenol_s_ng_mL",			
+                        `Butyl Paraben (ng/mL)` = "butyl_paraben_ng_mL",		
+                        `Creatinine (mg/dL)` = "creatinine_milligram_per_deciliter",				
+                        `Diethylphosphate (ng/mL)` = "diethylphosphate_ng_mL",				
+                        `Diethylthiophosphate (ng/mL)` = "diethylthiophosphate_ng_mL",				
+                        `Dimethylthiophosphate (ng/mL)` = "dimethylthiophosphate_ng_mL",				
+                        `Dimethylthiophosphate (ng/mL)` = "dimethylthiophosphate_ng_mL",		
+                        `Ethyl Paraben (ng/mL)` = "ethyl_paraben_ng_mL",	
+                        `Methyl Paraben (ng/mL)` = "methyl_paraben_ng_mL",
+                        `Mono(2-ethyl-5-hydroxyhexyl) Phthalate (ng/mL)` = "mono_2_ethyl_5_hydroxyhexyl_phthalate_ng_mL",				
+                        `Mono(2-ethyl-5-oxohexyl) Phthalate (ng/mL)` = "mono_2_ethyl_5_oxohexyl_phthalate_ng_mL",				
+                        `Mono(3-carboxypropyl) Phthalate (multiple) (ng/mL)` = "mono_3_carboxypropyl_phthalate_multiple_ng_mL",					
+                        `Mono(5-carboxy-2-ethylpentyl) Phthalate (DEHP) (ng/mL)` = "mono_5_carboxy_2_ethylpentyl_phthalate_dehp_ng_mL",				
+                        `Mono-Benzyl Phthalate (BzBP) (ng/mL)` = "mono_benzyl_phthalate_bz_bp_ng_mL",				
+                    "Mono-carboxy-isononyl phthalate (ng/mL)" = "mono_carboxy_isononyl_phthalate_ng_mL"	,		
+                    "Mono-carboxy-isooctyl phthalate (ng/mL)" = "mono_carboxy_isooctyl_phthalate_ng_mL"	,		
+                    "Mono-isobutyl phthalate (di-BP) (ng/mL)"= "mono_isobutyl_phthalate_di_bp_ng_mL",				
+              "Mono-n-butyl phthalate (Bz-BP, Dn-BP) (ng/mL)"   = "mono_n_butylphthalate_bz_bp_dn_bp_ng_mL",				        "Mono(2-ethylhexyl) phthalate (ng/mL)" = "mono2_ethylhexyl_phthalate_ng_mL",
+                       "Monoethyl phthalate (DEP) (ng/mL)" = "monoethyl_phthalate_dep_ng_mL",				
+                        "Propyl paraben (ng/mL)" = "propyl_paraben_ng_mL",				
+                       "Triclocarban (ng/mL)" =  "triclocarban_ng_mL",			
+                        "Triclosan (ng/mL)" = "triclosan_ng_mL"))
+   }
+  
+   updateSelectInput(session, "exposure_type_p2", choices = chs)
+})
+
+```
+
+Row  {data-height=50}
+-----------------------------------------------------------------------
+### Sample Size 
+```{r}
+renderValueBox({
+       if (input$time_p2== "baseline" ){ 
+
+  sample_size = depart_baseline %>% 
+    select(human_id,
+           resp_conc =!!input$response_type_p2, 
+           expo_conc =!!input$exposure_type_p2) %>% 
+      filter(resp_conc >= input$resp_conc_range[1] & resp_conc <= input$resp_conc_range[2]) %>% 
+            drop_na(resp_conc,expo_conc) %>% 
+    distinct(human_id, .keep_all = TRUE) %>% 
+            nrow()
+            
+       }
+    if (input$time_p2== "followup" ){ 
+
+  sample_size = depart_followup %>% 
+    select(human_id,
+           resp_conc =!!input$response_type_p2, 
+           expo_conc =!!input$exposure_type_p2) %>% 
+      filter(resp_conc >= input$resp_conc_range[1] & resp_conc <= input$resp_conc_range[2]) %>% 
+            drop_na(resp_conc,expo_conc) %>% 
+    distinct(human_id, .keep_all = TRUE) %>% 
+            nrow()
+            
+    }
+  if (input$time_p2== "followup_2" ){ 
+
+  sample_size = depart_followup_2 %>% 
+    select(human_id,
+           resp_conc =!!input$response_type_p2, 
+           expo_conc =!!input$exposure_type_p2) %>% 
+      filter(resp_conc >= input$resp_conc_range[1] & resp_conc <= input$resp_conc_range[2]) %>% 
+            drop_na(resp_conc,expo_conc) %>% 
+    distinct(human_id, .keep_all = TRUE) %>% 
+            nrow()
+            
+  }
+   if (input$time_p2== "followup_3" ){ 
+
+  sample_size = depart_followup_3 %>% 
+    select(human_id,
+           resp_conc =!!input$response_type_p2, 
+           expo_conc =!!input$exposure_type_p2) %>% 
+      filter(resp_conc >= input$resp_conc_range[1] & resp_conc <= input$resp_conc_range[2]) %>% 
+            drop_na(resp_conc,expo_conc) %>% 
+    distinct(human_id, .keep_all = TRUE) %>% 
+            nrow()
+            
+       }
+  
+  valueBox(value =  sample_size  , 
+  caption = "Sample Size Included",
+         icon = "fa-male",
+  color = "#c9e2f2")
+})
+
+```
+
+### Mean Biomarker Conc
+```{r}
+renderValueBox({
+
+    resp_name = input$exposure_type_p2
+
+     if (input$time_p2== "baseline" ){ 
+
+
+mean_rsp =  depart_baseline %>% 
+            select(human_id,
+           resp = !!input$exposure_type_p2) %>% 
+            drop_na(resp ) %>% 
+    distinct(human_id, .keep_all = TRUE) %>% 
+      summarise(resp = round(mean(resp),2))   }
+    
+   if (input$time_p2== "followup" ){ 
+
+
+mean_rsp =  depart_followup %>% 
+            select(human_id,
+           resp = !!input$exposure_type_p2) %>% 
+            drop_na(resp ) %>% 
+    distinct(human_id, .keep_all = TRUE) %>% 
+      summarise(resp = round(mean(resp),2))   }
+    
+       if (input$time_p2== "followup_2" ){ 
+
+
+mean_rsp =  depart_followup_2 %>% 
+            select(human_id,
+           resp = !!input$exposure_type_p2) %>% 
+            drop_na(resp ) %>% 
+    distinct(human_id, .keep_all = TRUE) %>% 
+      summarise(resp = round(mean(resp),2))   }
+    
+    if (input$time_p2== "followup_3" ){ 
+
+
+mean_rsp =  depart_followup_3 %>% 
+            select(human_id,
+           resp = !!input$exposure_type_p2) %>% 
+            drop_na(resp ) %>% 
+    distinct(human_id, .keep_all = TRUE) %>% 
+      summarise(resp = round(mean(resp),2))   }
+            
+            
+valueBox(value = mean_rsp , 
+caption = tags$p(
+      style = "font-size: 15px;",
+      paste("Mean Conc of", resp_name)
+    ),
+                 icon = "fa-calculator", 
+                 color = "#73c2fb")
+
+   
+  
+})
+
+```
+
+### Mean Oxidative Stress Conc
+```{r}
+renderValueBox({
+
+    resp_name = input$response_type_p2
+
+     if (input$time_p2== "baseline" ){ 
+
+
+mean_rsp =  depart_baseline %>% 
+            select(human_id,
+           resp = !!input$response_type_p2) %>% 
+      filter(resp >= input$resp_conc_range[1] & resp <= input$resp_conc_range[2]) %>% 
+            drop_na(resp ) %>% 
+    distinct(human_id, .keep_all = TRUE) %>% 
+      summarise(resp = round(mean(resp),2))   }
+    
+   if (input$time_p2== "followup" ){ 
+
+
+mean_rsp =  depart_followup %>% 
+            select(human_id,
+           resp = !!input$response_type_p2) %>% 
+        filter(resp>= input$resp_conc_range[1] & resp <= input$resp_conc_range[2]) %>% 
+            drop_na(resp ) %>% 
+    distinct(human_id, .keep_all = TRUE) %>% 
+      summarise(resp = round(mean(resp),2))   }
+    
+       if (input$time_p2== "followup_2" ){ 
+
+
+mean_rsp =  depart_followup_2 %>%
+            select(human_id,
+           resp = !!input$response_type_p2) %>%     
+  filter(resp>= input$resp_conc_range[1] & resp <= input$resp_conc_range[2]) %>% 
+            drop_na(resp ) %>% 
+    distinct(human_id, .keep_all = TRUE) %>% 
+      summarise(resp = round(mean(resp),2))   }
+    
+    if (input$time_p2== "followup_3" ){ 
+
+
+mean_rsp =  depart_followup_3 %>% 
+            select(human_id,
+           resp = !!input$response_type_p2) %>% 
+        filter(resp>= input$resp_conc_range[1] & resp <= input$resp_conc_range[2]) %>% 
+            drop_na(resp ) %>% 
+    distinct(human_id, .keep_all = TRUE) %>% 
+      summarise(resp = round(mean(resp),2))   }
+            
+            
+valueBox(value = mean_rsp , 
+caption = tags$p(
+      style = "font-size: 15px;",
+      paste("Mean Conc of", resp_name)
+    ),
+                 icon = "fa-calculator", 
+                 color = "#4692b4")
+
+   
+  
+})
+
+```
+Row 
+-----------------------------------------------------------------------
+### Distribution of Biomarker Conc by Selected Category
+```{r}
+renderPlotly({
+
+   if (input$time_p2== "baseline" ){ 
+
+p = depart_baseline %>%
+    select(human_id, 
+           group = !!input$categorical_variable_p2, 
+           expo_conc = !!input$exposure_type_p2) %>% 
+   plot_ly(   
+              y= ~expo_conc, 
+              color = ~  group,
+              type = "violin",
+    box = list(
+      visible = T
+    )) 
+   }
+   if (input$time_p2== "followup" ){ 
+
+p =depart_followup %>%
+    select(human_id, 
+           group = !!input$categorical_variable_p2, 
+           expo_conc = !!input$exposure_type_p2) %>% 
+   plot_ly(   
+              y= ~expo_conc, 
+              color = ~  group,
+              type = "violin",
+    box = list(
+      visible = T
+    )) 
+   }
+  if (input$time_p2== "followup_2" ){ 
+
+p =depart_followup_2 %>%
+    select(human_id, 
+           group = !!input$categorical_variable_p2, 
+           expo_conc = !!input$exposure_type_p2) %>% 
+   plot_ly(   
+              y= ~expo_conc, 
+              color = ~  group,
+              type = "violin",
+    box = list(
+      visible = T
+    )) 
+  }
+   if (input$time_p2== "followup_3" ){ 
+
+p =depart_followup_3 %>%
+    select(human_id, 
+           group = !!input$categorical_variable_p2, 
+           expo_conc = !!input$exposure_type_p2) %>% 
+   plot_ly(   
+              y= ~expo_conc, 
+              color = ~  group,
+              type = "violin",
+    box = list(
+      visible = T
+    )) 
+   }
+  
+name = input$exposure_type_p2
+ p%>%
+    layout(showlegend = TRUE, legend = list(font = list(size = 10)))%>% 
+    layout(xaxis= list(showticklabels = FALSE, title = ""),
+      yaxis = list(title = input$exposure_type_p2,titlefont = list(size = 10)))
+})
+
+
+
+```
+
+
+###  Trend of Avg Biomarker Concentration Change Over Time
+```{r}
+renderPlotly({
+  #Prepare the dataset for the following plot
+trend_baseline  = depart_baseline %>%  
+  select(human_id,resp = !!input$response_type_p2,group = !!input$categorical_variable_p2) %>% 
+  group_by(group) %>% 
+  drop_na(resp) %>% 
+  summarise(avg_conc = mean(resp)) %>% 
+  mutate(week ="baseline")
+
+trend_followup  = depart_followup %>%  
+  select(human_id,resp = !!input$response_type_p2,group = !!input$categorical_variable_p2) %>% 
+  group_by(group) %>% 
+  drop_na(resp) %>% 
+  summarise(avg_conc = mean(resp)) %>% 
+  mutate(week ="followup")
+
+trend_followup2 = depart_followup_2 %>%  
+  select(human_id,resp = !!input$response_type_p2,group = !!input$categorical_variable_p2) %>% 
+  group_by(group) %>% 
+  drop_na(resp) %>% 
+  summarise(avg_conc = mean(resp)) %>% 
+  mutate(week ="followup_2")
+
+trend_followup3 = depart_followup_3 %>%  
+  select(human_id,resp = !!input$response_type_p2,group = !!input$categorical_variable_p2) %>% 
+  group_by(group) %>% 
+  drop_na(resp) %>% 
+  summarise(avg_conc = mean(resp)) %>% 
+  mutate(week ="followup_3")
+
+  trends  = bind_rows(trend_baseline, trend_followup, trend_followup2, trend_followup3)
+
+  name_2 = input$response_type_p2
+  
+trends %>% 
+  ggplot(aes(x= week, y=avg_conc, color = group)) +
+     geom_point()+
+     geom_line(aes(group = group)) +
+     ylab( name_2 ) +
+     theme(axis.title.y = element_text(size = 8),
+           axis.title.x = element_text(size = 8),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 8))
+})
+
+```
+
+Row 
+-----------------------------------------------------------------------
+### Distribution of Exposures by Oxidative Stress Concentraton
+```{r}
+renderPlotly({
+  
+  if (input$time_p2== "baseline") { 
+    df = depart_baseline
+  }
+  else if (input$time_p2== "followup") {
+    df = depart_followup
+  }
+  else if (input$time_p2== "followup_2") {
+    df = depart_followup_2
+  }
+  else if (input$time_p2== "followup_3") {
+    df = depart_followup_3
+  }
+  
+  df %>% 
+    select(human_id,
+           resp_conc = !!input$response_type_p2, 
+           exposure_conc = !!input$exposure_type_p2, 
+           category_type = !!input$categorical_variable_p2
+           ) %>% 
+    filter(resp_conc >= input$resp_conc_range[1] & resp_conc <= input$resp_conc_range[2]) %>% 
+    plot_ly(
+      x = ~ exposure_conc,
+      y = ~ resp_conc,
+      color = ~ category_type,
+      type = "scatter",
+      mode = "markers",
+      marker = list(
+        size = 4, # adjust point size here
+        colorscale = "Viridis"
+      )
+    ) %>% 
+    layout(
+      showlegend = TRUE,
+      legend = list(font = list(size = 10)),
+      xaxis = list(
+        title = paste("Concentration", input$exposure_type_p2),
+        titlefont = list(size = 10)
+      ),
+      yaxis = list(
+        title = paste("Concentration", input$response_type_p2),
+        titlefont = list(size = 10)
+      )
+    )
+})
+
+```
+
+
+Interaction & Correlation
+===================================== 
+Inputs {.sidebar}
+-----------------------------------------------------------------------
+##### The Dynamics of Exposure, Phthalates and Asthma in a Randomized Trial (DEPART)
+
+###### Explore the interaction between two different `Exposures` (A and B) and a `Response` variable on Contour and 3D scatterplot. Choose a `Experimental Time point` and a `Categorical Variable` to see how the relationship between these variables changes over time and between groups.
+```{r}
+
+selectInput("exposure_type_p3a",
+            label = "Exposure - A", 
+                  list(`External Measure: Air contaminants` = 
+                  list(`Fine Respirable Suspended Particulate Matter (µg/m³)` = "fine_respirable_suspended_particulate_matter_µg_m3",
+                       `Endotoxin Allergen(Unit/m²)` = "endotoxin_allergen_units_per_square_meter"), 
+                 `Internal Measures: Urine Biomarker` 
+                 = list(`1-Hydroxynaphthalene (ng/mL)` = "X1_hydroxynaphthalene_ng_mL", 
+                        `1-Hydroxypyrene (ng/mL)` = "X1_hydroxypyrene_ng_mL",				
+                        `2-Hydroxynaphthalene (ng/mL)` = "X2_hydroxynaphthalene_ng_mL",		
+                        `3,5,6-Trichloro-2-Pyridinol (ng/mL)` = "X3_5_6_trichloro_2_pyridinol_ng_mL",				
+                        `3-Phenoxybenzoic Acid (ng/mL)` = "X3_phenoxybenzoic_acid_ng_mL",
+                        `Benzophenone-3 (ng/mL)` = "benzophenone_3_ng_mL",			
+                        `Bisphenol A (ng/mL)` = "bisphenol_a_ng_mL",				
+                        `Bisphenol F (ng/mL)` = "bisphenol_f_ng_mL", 
+                        `Bisphenol S (ng/mL)` = "bisphenol_s_ng_mL",			
+                        `Butyl Paraben (ng/mL)` = "butyl_paraben_ng_mL",		
+                        `Creatinine (mg/dL)` = "creatinine_milligram_per_deciliter",				
+                        `Diethylphosphate (ng/mL)` = "diethylphosphate_ng_mL",				
+                        `Diethylthiophosphate (ng/mL)` = "diethylthiophosphate_ng_mL",				
+                        `Dimethylthiophosphate (ng/mL)` = "dimethylthiophosphate_ng_mL",				
+                        `Dimethylthiophosphate (ng/mL)` = "dimethylthiophosphate_ng_mL",		
+                        `Ethyl Paraben (ng/mL)` = "ethyl_paraben_ng_mL",	
+                        `Methyl Paraben (ng/mL)` = "methyl_paraben_ng_mL",
+                        `Mono(2-ethyl-5-hydroxyhexyl) Phthalate (ng/mL)` = "mono_2_ethyl_5_hydroxyhexyl_phthalate_ng_mL",				
+                        `Mono(2-ethyl-5-oxohexyl) Phthalate (ng/mL)` = "mono_2_ethyl_5_oxohexyl_phthalate_ng_mL",				
+                        `Mono(3-carboxypropyl) Phthalate (multiple) (ng/mL)` = "mono_3_carboxypropyl_phthalate_multiple_ng_mL",					
+                        `Mono(5-carboxy-2-ethylpentyl) Phthalate (DEHP) (ng/mL)` = "mono_5_carboxy_2_ethylpentyl_phthalate_dehp_ng_mL",				
+                        `Mono-Benzyl Phthalate (BzBP) (ng/mL)` = "mono_benzyl_phthalate_bz_bp_ng_mL",				
+                    "Mono-carboxy-isononyl phthalate (ng/mL)" = "mono_carboxy_isononyl_phthalate_ng_mL"	,		
+                    "Mono-carboxy-isooctyl phthalate (ng/mL)" = "mono_carboxy_isooctyl_phthalate_ng_mL"	,		
+                    "Mono-isobutyl phthalate (di-BP) (ng/mL)"= "mono_isobutyl_phthalate_di_bp_ng_mL",				
+              "Mono-n-butyl phthalate (Bz-BP, Dn-BP) (ng/mL)"   = "mono_n_butylphthalate_bz_bp_dn_bp_ng_mL",				        "Mono(2-ethylhexyl) phthalate (ng/mL)" = "mono2_ethylhexyl_phthalate_ng_mL",
+                       "Monoethyl phthalate (DEP) (ng/mL)" = "monoethyl_phthalate_dep_ng_mL",				
+                        "Propyl paraben (ng/mL)" = "propyl_paraben_ng_mL",				
+                       "Triclocarban (ng/mL)" =  "triclocarban_ng_mL",			
+                        "Triclosan (ng/mL)" = "triclosan_ng_mL")), 
+            selected = "mono_carboxy_isooctyl_phthalate_ng_mL")
+
+selectInput("exposure_type_p3b",
+            label = "Exposure - B", 
+                  list(`External Measure: Air contaminants` = 
+                  list(`Fine Respirable Suspended Particulate Matter (µg/m³)` = "fine_respirable_suspended_particulate_matter_µg_m3",
+                       `Endotoxin Allergen(Unit/m²)` = "endotoxin_allergen_units_per_square_meter"), 
+                 `Internal Measures: Urine Biomarker` 
+                 = list(`1-Hydroxynaphthalene (ng/mL)` = "X1_hydroxynaphthalene_ng_mL", 
+                        `1-Hydroxypyrene (ng/mL)` = "X1_hydroxypyrene_ng_mL",				
+                        `2-Hydroxynaphthalene (ng/mL)` = "X2_hydroxynaphthalene_ng_mL",		
+                        `3,5,6-Trichloro-2-Pyridinol (ng/mL)` = "X3_5_6_trichloro_2_pyridinol_ng_mL",				
+                        `3-Phenoxybenzoic Acid (ng/mL)` = "X3_phenoxybenzoic_acid_ng_mL",
+                        `Benzophenone-3 (ng/mL)` = "benzophenone_3_ng_mL",			
+                        `Bisphenol A (ng/mL)` = "bisphenol_a_ng_mL",				
+                        `Bisphenol F (ng/mL)` = "bisphenol_f_ng_mL", 
+                        `Bisphenol S (ng/mL)` = "bisphenol_s_ng_mL",			
+                        `Butyl Paraben (ng/mL)` = "butyl_paraben_ng_mL",		
+                        `Creatinine (mg/dL)` = "creatinine_milligram_per_deciliter",				
+                        `Diethylphosphate (ng/mL)` = "diethylphosphate_ng_mL",				
+                        `Diethylthiophosphate (ng/mL)` = "diethylthiophosphate_ng_mL",				
+                        `Dimethylthiophosphate (ng/mL)` = "dimethylthiophosphate_ng_mL",				
+                        `Dimethylthiophosphate (ng/mL)` = "dimethylthiophosphate_ng_mL",		
+                        `Ethyl Paraben (ng/mL)` = "ethyl_paraben_ng_mL",	
+                        `Methyl Paraben (ng/mL)` = "methyl_paraben_ng_mL",
+                        `Mono(2-ethyl-5-hydroxyhexyl) Phthalate (ng/mL)` = "mono_2_ethyl_5_hydroxyhexyl_phthalate_ng_mL",				
+                        `Mono(2-ethyl-5-oxohexyl) Phthalate (ng/mL)` = "mono_2_ethyl_5_oxohexyl_phthalate_ng_mL",				
+                        `Mono(3-carboxypropyl) Phthalate (multiple) (ng/mL)` = "mono_3_carboxypropyl_phthalate_multiple_ng_mL",					
+                        `Mono(5-carboxy-2-ethylpentyl) Phthalate (DEHP) (ng/mL)` = "mono_5_carboxy_2_ethylpentyl_phthalate_dehp_ng_mL",				
+                        `Mono-Benzyl Phthalate (BzBP) (ng/mL)` = "mono_benzyl_phthalate_bz_bp_ng_mL",				
+                    "Mono-carboxy-isononyl phthalate (ng/mL)" = "mono_carboxy_isononyl_phthalate_ng_mL"	,		
+                    "Mono-carboxy-isooctyl phthalate (ng/mL)" = "mono_carboxy_isooctyl_phthalate_ng_mL"	,		
+                    "Mono-isobutyl phthalate (di-BP) (ng/mL)"= "mono_isobutyl_phthalate_di_bp_ng_mL",				
+              "Mono-n-butyl phthalate (Bz-BP, Dn-BP) (ng/mL)"   = "mono_n_butylphthalate_bz_bp_dn_bp_ng_mL",				        "Mono(2-ethylhexyl) phthalate (ng/mL)" = "mono2_ethylhexyl_phthalate_ng_mL",
+                       "Monoethyl phthalate (DEP) (ng/mL)" = "monoethyl_phthalate_dep_ng_mL",				
+                        "Propyl paraben (ng/mL)" = "propyl_paraben_ng_mL",				
+                       "Triclocarban (ng/mL)" =  "triclocarban_ng_mL",			
+                        "Triclosan (ng/mL)" = "triclosan_ng_mL")), 
+            selected = "X1_hydroxynaphthalene_ng_mL")
+
+
+selectInput("response_type_p3",
+            label = "Response", 
+            list(` Measures of Oxidative Stress` = 
+            list( "8-hydroxy-2-deoxyguanosine (ng/mL)"= "X8_hydroxy_2_deoxyguanosine_ng_mL",
+                  "8-iso-prostaglandin F2 alpha (ng/mL)" = "X8_iso_prostaglandin_f2_alpha_ng_mL", 
+                  "Leukotriene E4 (ng/mL)" = "leukotriene_e4_ng_mL")), 
+                 selected = "leukotriene_e4_ng_mL" )
+
+selectInput("categorical_variable_p3",
+            label = "Categorical Variable", 
+            list(`Individual Characteristics ` = list("Sex" = "sex",
+                                                      "Race "= "race",
+                                                      "Ethnicity" =  "ethnicity",
+                                                      "Phenotype" = "phenotype"),
+                  `Experimental Group` = list("Treatment Group" = "trt_group",
+                    "Medical Intervention"   =  "medical_intervention"), 
+                  `Clinical Diagnosis` = 
+                   list("Allergy Test Results" = "allergy_test")), 
+                 selected = "sex")
+
+radioButtons("time_p3", 
+             label = "Experimental Time Point", 
+              choices = c("Baseline" = "baseline", 
+                          "Followup" = "followup", 
+                          "Followup_2" = "followup_2", 
+                          "Followup_3"  = "followup_3"), 
+             selected = "baseline")
+
+#update event
+observeEvent(input$time_p3, {
+
+   chs = if(input$time_p3=="baseline")
+   { 
+      list(`External Measure: Air contaminants` = 
+         list(`Fine Respirable Suspended Particulate Matter (µg/m³)` = "fine_respirable_suspended_particulate_matter_µg_m3",
+              `Endotoxin Allergen(Unit/m²)` = "endotoxin_allergen_units_per_square_meter"), 
+          `Internal Measures: Urine Biomarker` 
+          = list(`1-Hydroxynaphthalene (ng/mL)` = "X1_hydroxynaphthalene_ng_mL", 
+                        `1-Hydroxypyrene (ng/mL)` = "X1_hydroxypyrene_ng_mL",				
+                        `2-Hydroxynaphthalene (ng/mL)` = "X2_hydroxynaphthalene_ng_mL",		
+                        `3,5,6-Trichloro-2-Pyridinol (ng/mL)` = "X3_5_6_trichloro_2_pyridinol_ng_mL",				
+                        `3-Phenoxybenzoic Acid (ng/mL)` = "X3_phenoxybenzoic_acid_ng_mL",
+                        `Benzophenone-3 (ng/mL)` = "benzophenone_3_ng_mL",			
+                        `Bisphenol A (ng/mL)` = "bisphenol_a_ng_mL",				
+                        `Bisphenol F (ng/mL)` = "bisphenol_f_ng_mL", 
+                        `Bisphenol S (ng/mL)` = "bisphenol_s_ng_mL",			
+                        `Butyl Paraben (ng/mL)` = "butyl_paraben_ng_mL",		
+                        `Creatinine (mg/dL)` = "creatinine_milligram_per_deciliter",				
+                        `Diethylphosphate (ng/mL)` = "diethylphosphate_ng_mL",				
+                        `Diethylthiophosphate (ng/mL)` = "diethylthiophosphate_ng_mL",				
+                        `Dimethylthiophosphate (ng/mL)` = "dimethylthiophosphate_ng_mL",				
+                        `Dimethylthiophosphate (ng/mL)` = "dimethylthiophosphate_ng_mL",		
+                        `Ethyl Paraben (ng/mL)` = "ethyl_paraben_ng_mL",	
+                        `Methyl Paraben (ng/mL)` = "methyl_paraben_ng_mL",
+                        `Mono(2-ethyl-5-hydroxyhexyl) Phthalate (ng/mL)` = "mono_2_ethyl_5_hydroxyhexyl_phthalate_ng_mL",				
+                        `Mono(2-ethyl-5-oxohexyl) Phthalate (ng/mL)` = "mono_2_ethyl_5_oxohexyl_phthalate_ng_mL",				
+                        `Mono(3-carboxypropyl) Phthalate (multiple) (ng/mL)` = "mono_3_carboxypropyl_phthalate_multiple_ng_mL",					
+                        `Mono(5-carboxy-2-ethylpentyl) Phthalate (DEHP) (ng/mL)` = "mono_5_carboxy_2_ethylpentyl_phthalate_dehp_ng_mL",				
+                        `Mono-Benzyl Phthalate (BzBP) (ng/mL)` = "mono_benzyl_phthalate_bz_bp_ng_mL",				
+                    "Mono-carboxy-isononyl phthalate (ng/mL)" = "mono_carboxy_isononyl_phthalate_ng_mL"	,		
+                    "Mono-carboxy-isooctyl phthalate (ng/mL)" = "mono_carboxy_isooctyl_phthalate_ng_mL"	,		
+                    "Mono-isobutyl phthalate (di-BP) (ng/mL)"= "mono_isobutyl_phthalate_di_bp_ng_mL",				
+              "Mono-n-butyl phthalate (Bz-BP, Dn-BP) (ng/mL)"   = "mono_n_butylphthalate_bz_bp_dn_bp_ng_mL",				        "Mono(2-ethylhexyl) phthalate (ng/mL)" = "mono2_ethylhexyl_phthalate_ng_mL",
+                       "Monoethyl phthalate (DEP) (ng/mL)" = "monoethyl_phthalate_dep_ng_mL",				
+                        "Propyl paraben (ng/mL)" = "propyl_paraben_ng_mL",				
+                       "Triclocarban (ng/mL)" =  "triclocarban_ng_mL",			
+                        "Triclosan (ng/mL)" = "triclosan_ng_mL"))
+   } else if(input$time_p3=="followup"| input$time_p3 == "followup_2"| input$time_p3 == "followup_3")
+   {
+      list(`Internal Measures: Urine Biomarker` 
+         = list(`1-Hydroxynaphthalene (ng/mL)` = "X1_hydroxynaphthalene_ng_mL", 
+                        `1-Hydroxypyrene (ng/mL)` = "X1_hydroxypyrene_ng_mL",				
+                        `2-Hydroxynaphthalene (ng/mL)` = "X2_hydroxynaphthalene_ng_mL",		
+                        `3,5,6-Trichloro-2-Pyridinol (ng/mL)` = "X3_5_6_trichloro_2_pyridinol_ng_mL",				
+                        `3-Phenoxybenzoic Acid (ng/mL)` = "X3_phenoxybenzoic_acid_ng_mL",
+                        `Benzophenone-3 (ng/mL)` = "benzophenone_3_ng_mL",			
+                        `Bisphenol A (ng/mL)` = "bisphenol_a_ng_mL",				
+                        `Bisphenol F (ng/mL)` = "bisphenol_f_ng_mL", 
+                        `Bisphenol S (ng/mL)` = "bisphenol_s_ng_mL",			
+                        `Butyl Paraben (ng/mL)` = "butyl_paraben_ng_mL",		
+                        `Creatinine (mg/dL)` = "creatinine_milligram_per_deciliter",				
+                        `Diethylphosphate (ng/mL)` = "diethylphosphate_ng_mL",				
+                        `Diethylthiophosphate (ng/mL)` = "diethylthiophosphate_ng_mL",				
+                        `Dimethylthiophosphate (ng/mL)` = "dimethylthiophosphate_ng_mL",				
+                        `Dimethylthiophosphate (ng/mL)` = "dimethylthiophosphate_ng_mL",		
+                        `Ethyl Paraben (ng/mL)` = "ethyl_paraben_ng_mL",	
+                        `Methyl Paraben (ng/mL)` = "methyl_paraben_ng_mL",
+                        `Mono(2-ethyl-5-hydroxyhexyl) Phthalate (ng/mL)` = "mono_2_ethyl_5_hydroxyhexyl_phthalate_ng_mL",				
+                        `Mono(2-ethyl-5-oxohexyl) Phthalate (ng/mL)` = "mono_2_ethyl_5_oxohexyl_phthalate_ng_mL",				
+                        `Mono(3-carboxypropyl) Phthalate (multiple) (ng/mL)` = "mono_3_carboxypropyl_phthalate_multiple_ng_mL",					
+                        `Mono(5-carboxy-2-ethylpentyl) Phthalate (DEHP) (ng/mL)` = "mono_5_carboxy_2_ethylpentyl_phthalate_dehp_ng_mL",				
+                        `Mono-Benzyl Phthalate (BzBP) (ng/mL)` = "mono_benzyl_phthalate_bz_bp_ng_mL",				
+                    "Mono-carboxy-isononyl phthalate (ng/mL)" = "mono_carboxy_isononyl_phthalate_ng_mL"	,		
+                    "Mono-carboxy-isooctyl phthalate (ng/mL)" = "mono_carboxy_isooctyl_phthalate_ng_mL"	,		
+                    "Mono-isobutyl phthalate (di-BP) (ng/mL)"= "mono_isobutyl_phthalate_di_bp_ng_mL",				
+              "Mono-n-butyl phthalate (Bz-BP, Dn-BP) (ng/mL)"   = "mono_n_butylphthalate_bz_bp_dn_bp_ng_mL",				        "Mono(2-ethylhexyl) phthalate (ng/mL)" = "mono2_ethylhexyl_phthalate_ng_mL",
+                       "Monoethyl phthalate (DEP) (ng/mL)" = "monoethyl_phthalate_dep_ng_mL",				
+                        "Propyl paraben (ng/mL)" = "propyl_paraben_ng_mL",				
+                       "Triclocarban (ng/mL)" =  "triclocarban_ng_mL",			
+                        "Triclosan (ng/mL)" = "triclosan_ng_mL"))
+   }
+  
+lapply(c("exposure_type_p3a", "exposure_type_p3b"), function(input_id) {
+     updateSelectInput(session, input_id, choices = chs)})
+                       })
+
+```
+
+
+Row
+-----------------------------------------------------------------------
+### Exposure Biomarkers Correlation Matrix Heatmap
+```{r}
+# remove any rows with missing values before calculating the correlation
+
+renderPlotly({
+
+  
+        if (input$time_p3== "baseline") { 
+
+corr = depart_baseline %>% 
+  select(- X8_hydroxy_2_deoxyguanosine_ng_mL, -X8_iso_prostaglandin_f2_alpha_ng_mL, -leukotriene_e4_ng_mL) %>%   
+  select(X1_hydroxynaphthalene_ng_mL:triclosan_ng_mL)%>%
+  na.omit()
+
+matrix = cor(corr)
+matrix[upper.tri(matrix )] <- NA
+melted_corr_mat <- melt(matrix)}
+  
+  
+  if (input$time_p3== "followup") { 
+
+corr = depart_followup %>% 
+  select(- X8_hydroxy_2_deoxyguanosine_ng_mL, -X8_iso_prostaglandin_f2_alpha_ng_mL, -leukotriene_e4_ng_mL) %>%   
+  select(X1_hydroxynaphthalene_ng_mL:triclosan_ng_mL)%>%
+  na.omit()
+
+matrix = cor(corr)
+matrix[upper.tri(matrix )] <- NA
+melted_corr_mat <- melt(matrix)}
+  
+    if (input$time_p3== "followup_2") { 
+
+corr = depart_followup_2 %>% 
+  select(- X8_hydroxy_2_deoxyguanosine_ng_mL, -X8_iso_prostaglandin_f2_alpha_ng_mL, -leukotriene_e4_ng_mL) %>%   
+  select(X1_hydroxynaphthalene_ng_mL:triclosan_ng_mL)%>%
+  na.omit()
+
+matrix = cor(corr)
+matrix[upper.tri(matrix )] <- NA
+melted_corr_mat <- melt(matrix)}
+  
+   if (input$time_p3== "followup_3") { 
+
+corr = depart_followup_3 %>% 
+  select(- X8_hydroxy_2_deoxyguanosine_ng_mL, -X8_iso_prostaglandin_f2_alpha_ng_mL, -leukotriene_e4_ng_mL) %>%   
+  select(X1_hydroxynaphthalene_ng_mL:triclosan_ng_mL)%>%
+  na.omit()
+
+matrix = cor(corr)
+matrix[upper.tri(matrix )] <- NA
+melted_corr_mat <- melt(matrix)}
+
+p = ggplot(data = melted_corr_mat, aes(x=Var1, y=Var2, fill=value)) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "steelblue", na.value = "transparent") +
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        axis.title.x = element_text(size = 8),
+        axis.title.y = element_text(size = 8),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 8)) 
+
+  
+
+})
+
+```
+
+### Contour: Interaction Between Exposures and Response
+```{r}
+renderPlotly({
+  
+  # Define x and y axis labels
+  x_axis = input$exposure_type_p3a
+  y_axis = input$exposure_type_p3b
+  z_axis = input$response_type_p3
+  
+  
+  # Create the Contour
+      if (input$time_p3== "baseline") { 
+
+p= depart_baseline %>% 
+   select(human_id,
+           expo_conc_a = !!input$exposure_type_p3a, 
+           expo_conc_b = !!input$exposure_type_p3b, 
+           rsp_conc = !!input$response_type_p3, 
+           group = !!input$categorical_variable_p3) %>% 
+    plot_ly( x = ~ expo_conc_a,
+             y= ~ expo_conc_b,
+             z = ~ rsp_conc,
+             type = "contour")
+    }
+  
+    if (input$time_p3== "followup") { 
+
+p= depart_followup %>% 
+   select(human_id,
+           expo_conc_a = !!input$exposure_type_p3a, 
+           expo_conc_b = !!input$exposure_type_p3b, 
+           rsp_conc = !!input$response_type_p3, 
+           group = !!input$categorical_variable_p3) %>% 
+    plot_ly( x = ~ expo_conc_a,
+             y= ~ expo_conc_b,
+             z = ~ rsp_conc,
+             type = "contour")
+    }
+  
+   if (input$time_p3== "followup_2") { 
+
+p= depart_followup_2 %>% 
+   select(human_id,
+           expo_conc_a = !!input$exposure_type_p3a, 
+           expo_conc_b = !!input$exposure_type_p3b, 
+           rsp_conc = !!input$response_type_p3, 
+           group = !!input$categorical_variable_p3) %>% 
+    plot_ly( x = ~ expo_conc_a,
+             y= ~ expo_conc_b,
+             z = ~ rsp_conc,
+             type = "contour")
+   }
+  
+   if (input$time_p3== "followup_3") { 
+
+p= depart_followup_3 %>% 
+   select(human_id,
+           expo_conc_a = !!input$exposure_type_p3a, 
+           expo_conc_b = !!input$exposure_type_p3b, 
+           rsp_conc = !!input$response_type_p3, 
+           group = !!input$categorical_variable_p3) %>% 
+    plot_ly( x = ~ expo_conc_a,
+             y= ~ expo_conc_b,
+             z = ~ rsp_conc,
+             type = "contour")
+    }
+  
+ p %>% 
+    layout(
+      xaxis = list(title = x_axis, tickfont = list(size = 8)),
+      yaxis = list(title = y_axis, tickfont = list(size = 8)),
+      font = list(size = 8),
+      colorbar = list(title = z_axis, tickfont = list(size = 8), 
+                      height= 200, width = 350))
+})
+```
+Row
+-----------------------------------------------------------------------
+
+### 3D-Scatterplot: Interaction Between Exposures and Response {data-height=750}
+```{r}
+renderPlotly({
+ 
+  # Create the 3D Scatterplot
+    if (input$time_p3== "baseline") { 
+
+p = depart_baseline %>% 
+   select(human_id,
+           expo_conc_a = !!input$exposure_type_p3a, 
+           expo_conc_b = !!input$exposure_type_p3b, 
+           rsp_conc = !!input$response_type_p3, 
+           group = !!input$categorical_variable_p3) %>% 
+    plot_ly( x = ~ expo_conc_a,
+             y= ~ expo_conc_b,
+             z = ~ rsp_conc,
+             type = "scatter3d",
+            mode="markers",
+      marker = list(
+        size = 5),
+           color= ~ group)}
+  
+  if (input$time_p3== "followup") { 
+
+p = depart_followup %>% 
+   select(human_id,
+           expo_conc_a = !!input$exposure_type_p3a, 
+           expo_conc_b = !!input$exposure_type_p3b, 
+           rsp_conc = !!input$response_type_p3, 
+           group = !!input$categorical_variable_p3) %>% 
+    plot_ly( x = ~ expo_conc_a,
+             y= ~ expo_conc_b,
+             z = ~ rsp_conc,
+             type = "scatter3d",
+            mode="markers",
+      marker = list(
+        size = 5),
+           color= ~ group)}
+   
+  if (input$time_p3== "followup_2") { 
+
+p = depart_followup_2 %>% 
+   select(human_id,
+           expo_conc_a = !!input$exposure_type_p3a, 
+           expo_conc_b = !!input$exposure_type_p3b, 
+           rsp_conc = !!input$response_type_p3, 
+           group = !!input$categorical_variable_p3) %>% 
+    plot_ly( x = ~ expo_conc_a,
+             y= ~ expo_conc_b,
+             z = ~ rsp_conc,
+             type = "scatter3d",
+            mode="markers",
+      marker = list(
+        size = 5),
+           color= ~ group)}
+  
+    if (input$time_p3== "followup_3") { 
+
+p = depart_followup_3 %>% 
+   select(human_id,
+           expo_conc_a = !!input$exposure_type_p3a, 
+           expo_conc_b = !!input$exposure_type_p3b, 
+           rsp_conc = !!input$response_type_p3, 
+           group = !!input$categorical_variable_p3) %>% 
+    plot_ly( x = ~ expo_conc_a,
+             y= ~ expo_conc_b,
+             z = ~ rsp_conc,
+             type = "scatter3d",
+            mode="markers",
+      marker = list(
+        size = 5),
+           color= ~ group)}
+  
+  
+     # Define x and y axis labels
+  x_axis = input$exposure_type_p3a
+  y_axis = input$exposure_type_p3b
+  z_axis = input$response_type_p3
+  
+  p%>%
+  layout(scene = list(xaxis = list(title =   x_axis,
+        titlefont = list(size = 8)),
+                      yaxis = list(title =   y_axis,
+        titlefont = list(size = 8)),
+                      zaxis = list(title =   z_axis,
+        titlefont = list(size = 8))))
+
+
+
+})
+```
+
+
+
