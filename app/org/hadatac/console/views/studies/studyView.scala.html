@@ -10,6 +10,7 @@
         total           : Integer,
         userName        : String,
         source        : String,
+        studyIds       : String,
         shinyAppUrl     : String
 )
 
@@ -59,6 +60,7 @@
                     <br>
                     <input type="hidden" id="downloadSrc" name="downloadSrc" value="studypage" />
                     <input type="hidden" id="source" name="source" value="@{source}" />
+                    <input type="hidden" id="studyIds" name="studyIds" value="@{studyIds}" />
                     <input type="hidden" id="renameFiles" name="renameFiles" value="true" />
                     <input type="hidden" id="studyId" name="studyId" value="@{study.getId()}" />
                     <input class="btn btn-info" type="submit" id="submitAlignment" value="Confirm" />

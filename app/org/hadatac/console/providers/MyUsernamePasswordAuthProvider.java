@@ -57,6 +57,7 @@ public class MyUsernamePasswordAuthProvider implements MyAuthUserIdentity{
     private String source;
     private String studyPageRef;
     private String studyId;
+    private String studyIds;
 
     private MessagesApi messagesApi;
     private Config config;
@@ -151,6 +152,14 @@ public class MyUsernamePasswordAuthProvider implements MyAuthUserIdentity{
 
     public void setStudyId(String studyId) {
         this.studyId = studyId;
+    }
+
+    public String getStudyIds() {
+        return studyIds;
+    }
+
+    public void setStudyIds(String studyIds) {
+        this.studyIds = studyIds;
     }
 
     public String validate() {

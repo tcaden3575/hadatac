@@ -97,12 +97,19 @@ public class StudyView extends Controller {
         System.out.println("shinyAppUrl: [" + shinyAppUrl.toString() + "]");
 
         String source = "studypage";
+        String studyIds = "";
         Map<String, String[]> params = getRequestParameters( request);
         System.out.println("params: "+ params);
         if(params.containsKey("source")) {
             System.out.println("params.get(source): "+ params.get("source"));
             source = params.get("source")[0];
         }
+        if(params.containsKey("studyIds")) {
+            System.out.println("params.get(studyIds): "+ params.get("studyIds"));
+            studyIds = params.get("studyIds")[0];
+            System.out.println("params.get(studyIds)[0]): "+ studyIds);
+        }
+
 
         ObjectCollection oc = null;
         if (oc_uri != null && !oc_uri.equals("")) {
@@ -116,7 +123,9 @@ public class StudyView extends Controller {
             total = StudyObject.getNumberStudyObjectsByCollection(oc_uri);
         }
 
-        return ok(studyView.render(graph.getTreeQueryResult().replace("\n", " "), study, agent, institution, oc, objects, page, total,application.getUserEmail(request), source, shinyAppUrl.toString()));
+        return ok(studyView.render(graph.getTreeQueryResult().replace("\n", " "),
+                study, agent, institution, oc, objects, page, total,application.getUserEmail(request),
+                source, studyIds, shinyAppUrl.toString()));
     }
 
     @Secure(authorizers = Constants.DATA_OWNER_ROLE)

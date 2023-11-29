@@ -345,10 +345,11 @@ public class Signup {
             application.formIndex(request,user,playSessionStore,playWebContext);
 
             Map params = request.queryString();
-            params.forEach((K,V) -> System.out.println(K + ", value : " + V));
+            //params.forEach((K,V) -> System.out.println(K + ", value : " + V));
             System.out.println("formData= " + formData);
 
             String source = formData.get().getSource();
+            String studyIds = formData.get().getStudyId();
             String studyPageRef = formData.get().getStudyPageRef();
 
             if(!StringUtil.isNullOrEmpty(source) && !StringUtil.isNullOrEmpty(studyPageRef) && source.equals("studypage")) {
@@ -357,8 +358,8 @@ public class Signup {
                 return ok (studyPageRef).addingToSession(request ,"userValidated", "yes");
             }
             else if(!StringUtil.isNullOrEmpty(source) && source.equals("generateDataSet")) {
-                String pageRef = "/" +studyPageRef+"&source="+source;;
-                //System.out.println("PageRef= " + pageRef);
+                String pageRef = "/" +studyPageRef+"&source="+source+"&studyIds="+studyIds;;
+                System.out.println("PageRef= " + pageRef);
 
                 return ok (pageRef).addingToSession(request ,"userValidated", "yes");
             }
