@@ -1,5 +1,6 @@
 package org.hadatac.console.controllers.dataacquisitionsearch;
 
+import java.util.stream.Collectors;
 import be.objectify.deadbolt.java.actions.Group;
 import be.objectify.deadbolt.java.actions.Restrict;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,10 +16,7 @@ import org.hadatac.console.models.*;
 import org.hadatac.console.views.html.dataacquisitionsearch.dataacquisition_browser;
 import org.hadatac.console.views.html.dataacquisitionsearch.facetOnlyBrowser;
 import org.hadatac.data.model.AcquisitionQueryResult;
-import org.hadatac.entity.pojo.Measurement;
-import org.hadatac.entity.pojo.ObjectCollection;
-import org.hadatac.entity.pojo.SPARQLUtilsFacetSearch;
-import org.hadatac.entity.pojo.User;
+import org.hadatac.entity.pojo.*;
 import org.hadatac.utils.ConfigProp;
 import org.pac4j.play.java.Secure;
 import org.slf4j.Logger;
@@ -359,13 +357,10 @@ public class DataAcquisitionSearch extends Controller {
 
                         if (studyIds.contains("!")) {
                             String[] studyIdsArr = studyIds.split("!");
-                            System.out.println("DataAcquisitionSearch.downloadAlignment : studyIdsArr=[" + studyIdsArr + "]");
-                            //System.out.println("DataAcquisitionSearch.downloadAlignment : studyIdsArr length =[" + studyIdsArr.length + "]");
-                            facets = getStudyFacetQuery(studyIdsArr);
+                            facets = getStudyFacetS(studyIdsArr);
                         } else {
-                            //facets = ConfigProp.getFacetedSearhQuery("STD-"+studyIds);
-                            System.out.println("DataAcquisitionSearch.downloadAlignment : studyId=[" + studyIds + "]");
-                            facets = getStudyFacetQuery("STD-" + studyIds);
+                            String[] studyIdsArr = {studyIds};
+                            facets = getStudyFacetS(studyIdsArr);
                         }
                     }
                 }
@@ -621,115 +616,50 @@ public class DataAcquisitionSearch extends Controller {
         return preferences(fs, fo, fec, fu, ft, fsp, fp, request);
     }
 
-    private String getStudyFacetQuery(String studyId) {
-        if (studyFacetQueries == null) {
-            ObjectMapper objectMapper = new ObjectMapper();
-
-            Map<String, List<String>> map = createStudyFacetDAFiles();
-            studyFacetQueries = new HashMap<String, String>();
-
-            map.forEach((study, das) -> {
-                FacetS facetS = new FacetS();
-                facetS.setId("http://hadatac.org/kb/hhear#" + study);
-                facetS.setStudy_uri_str("http://hadatac.org/kb/hhear#" + study);
-
-                List<DAChild> lst = new ArrayList<>();
-                das.forEach((da) -> {
-                    DAChild c = new DAChild();
-                    c.setId(da);
-                    c.setAcquisition_uri_str(da);
-                    lst.add(c);
-                });
-                facetS.setChildren(lst);
-
-                try {
-                    String facetSJson = objectMapper.writeValueAsString(facetS);
-                    //System.out.println("---------------\nfacetSJson:" +study + "\n" + facetSJson.toString());
-
-                    StringBuilder facets = new StringBuilder();
-                    facets.append("{");
-                    facets.append("\"facetsS\":[");
-                    facets.append(facetSJson);
-                    facets.append("],");
-                    facets.append("\"facetsEC\":[],");
-                    facets.append("\"facetsOC\":[],");
-                    facets.append("\"facetsU\":[],");
-                    facets.append("\"facetsT\":[],");
-                    facets.append("\"facetsPI\":[]");
-                    facets.append("}");
-
-                    //System.out.println("\n-----Build FACET----------\nStudy:" +study + "\n" + facets.toString());
-
-                    studyFacetQueries.put(study, facets.toString());
-                } catch (Exception e) {
-                }
-            });
-        }
-
-        String newFacetQuery = studyFacetQueries.get(studyId);
-        System.out.println("\n-----NEW VERSION----------\nStudy:" + studyId + "\n" + newFacetQuery);
-
-        String oldFacetQuery = getStudyFacetQuery2(studyId);
-        System.out.println("\n-----OLD VERSION----------\nStudy:" + studyId + "\n" + oldFacetQuery);
-        System.out.println();
-
-        return studyFacetQueries.get(studyId);
-        //return oldFacetQuery;
-    }
-
-    private String getStudyFacetQuery2(String studyId) {
-        //if(studyFacetQueries==null)
-        //{
-        HashMap<String, String> studyFacetQueries = new HashMap<String, String>();
-
-        studyFacetQueries.put("STD-2016-34", "{\"facetsEC\":[],\"facetsS\":[{\"id\":\"http://hadatac.org/kb/hhear#STD-2016-34\",\"study_uri_str\":\"http://hadatac.org/kb/hhear#STD-2016-34\",\"children\":[{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-34-Lab-Creatinine\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-34-Lab-Creatinine\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-34-Lab-Metals\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-34-Lab-Metals\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-34-PD-DemoHealth\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-34-PD-DemoHealth\"}]}],\"facetsOC\":[],\"facetsU\":[],\"facetsT\":[],\"facetsPI\":[]}");
-        studyFacetQueries.put("STD-2016-1431", "{\"facetsEC\":[],\"facetsS\":[{\"id\":\"http://hadatac.org/kb/hhear#STD-2016-1431\",\"study_uri_str\":\"http://hadatac.org/kb/hhear#STD-2016-1431\",\"children\":[{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-1431-Lab-PAH-PSAMPLES\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-1431-Lab-PAH-PSAMPLES\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-1431-Lab-PAH-SSAMPLES\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-1431-Lab-PAH-SSAMPLES\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Anthropom-P01\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Anthropom-P01\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Anthropom-P20\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Anthropom-P20\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Demo\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Demo\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Exposures-P20\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Exposures-P20\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Metabolic-P01\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Metabolic-P01\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Metabolic-P20\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-Metabolic-P20\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-SpecGrav-P01\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2016-1431-PD-SpecGrav-P01\"}]}],\"facetsOC\":[],\"facetsU\":[],\"facetsT\":[],\"facetsPI\":[]}");
-        studyFacetQueries.put("STD-2017-1762", "{\"facetsEC\":[],\"facetsS\":[{\"id\":\"http://hadatac.org/kb/hhear#STD-2017-1762\",\"study_uri_str\":\"http://hadatac.org/kb/hhear#STD-2017-1762\",\"children\":[{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-1762-Lab-CotA\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-1762-Lab-CotA\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-1762-Lab-CotB\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-1762-Lab-CotB\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-1762-Lab-Inflam\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-1762-Lab-Inflam\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-1762-PD-DemoHealth\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-1762-PD-DemoHealth\"}]}],\"facetsOC\":[],\"facetsU\":[],\"facetsT\":[],\"facetsPI\":[]}");
-        studyFacetQueries.put("STD-2017-2121", "{\"facetsEC\":[],\"facetsS\":[{\"id\":\"http://hadatac.org/kb/hhear#STD-2017-2121\",\"study_uri_str\":\"http://hadatac.org/kb/hhear#STD-2017-2121\",\"children\":[{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-Creatinine\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-Creatinine\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-Inflam\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-Inflam\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-Oxid\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-Oxid\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-Phthalates\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-Phthalates\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-UPAH\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-UPAH\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-UPEST_DAPs\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-UPEST_DAPs\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-UPEST_UPMs\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-UPEST_UPMs\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-UPHENOL_UPB\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-2121-Lab-UPHENOL_UPB\"},{\"id\":\"http://hadatac.org/kb/hhear#DA-2017-2121-PD-DemoHealth\",\"acquisition_uri_str\":\"http://hadatac.org/kb/hhear#DA-2017-2121-PD-DemoHealth\"}]}],\"facetsOC\":[],\"facetsU\":[],\"facetsT\":[],\"facetsPI\":[]}");
-        //}
-
-        return studyFacetQueries.get(studyId);
-    }
-
-    private String getStudyFacetQuery(String[] studyIds) {
+    private String getStudyFacetS(String[] studyIds) {
         ObjectMapper objectMapper = new ObjectMapper();
+        //final String studyPrefix = "http://hadatac.org/kb/hhear#STD-";
 
-        Map<String, List<String>> map = createStudyFacetDAFiles();
+        Map<String, List<String>> mapStudyDas = createStudyFacetDAFiles(studyIds);
         String studyFacetQuery = "";
 
         List<FacetS> facetSet = new ArrayList<>();
 
-        List<String> studIdList = Arrays.asList(studyIds);
-        //System.out.println("DataAcquisitionSearch.downloadAlignment : studIdList=[" + studIdList + "]");
-        //System.out.println("DataAcquisitionSearch.downloadAlignment : studIdList size =[" + studIdList.size() + "]");
+        //List<String> studIdList = Arrays.asList(studyIds);
+        //System.out.println("StudyView.getStudyFacetS : studIdList=[" + studIdList + "]");
+        //System.out.println("StudyView.getStudyFacetS : studIdList size =[" + studIdList.size() + "]");
 
-        //studIdList.forEach((id) -> System.out.print(id + ",  "));
-        //System.out.println();
+        /*mapStudyDas.forEach((k,v)-> {
+            System.out.println("StudyView.getStudyFacetS [study,  das]: study=" +k + ", das=: "+ v);
+        });*/
 
-        map.forEach((study, das) -> {
-            //System.out.println("DataAcquisitionSearch.downloadAlignment : study=[" + study + "]");
-            //System.out.println("DataAcquisitionSearch.downloadAlignment : das=[" + das + "]");
-            String studyNumber = study.replace("STD-", "");
-            //System.out.println("DataAcquisitionSearch.downloadAlignment : studyNumber=[" + studyNumber + "]");
-            if (studIdList.contains(studyNumber)) {
-                FacetS facetS = new FacetS();
-                facetS.setId("http://hadatac.org/kb/hhear#" + study);
-                facetS.setStudy_uri_str("http://hadatac.org/kb/hhear#" + study);
+        mapStudyDas.forEach((study, das) -> {
+            //System.out.println("StudyView.getStudyFacetS : study=[" + study + "]");
+            //System.out.println("StudyView.getStudyFacetS : das=[" + das + "]");
 
-                List<DAChild> lst = new ArrayList<>();
-                das.forEach((da) -> {
-                    DAChild c = new DAChild();
-                    c.setId(da);
-                    c.setAcquisition_uri_str(da);
-                    lst.add(c);
-                });
-                facetS.setChildren(lst);
-                facetSet.add(facetS);
-            }
+            //String studyNumber = study.replace(studyPrefix, "");
+            //studyNumber = studyNumber.replace("STD-", "");
+            //System.out.println("StudyView.getStudyFacetS : studyNumber=[" + studyNumber + "]");
+
+            String id = study;
+            String studyUriStr = study;
+            FacetS facetS = new FacetS(id, studyUriStr);
+
+            List<DAChild> lst = new ArrayList<>();
+            das.forEach(da -> {
+                DAChild c = new DAChild(da, da);
+                lst.add(c);
+            });
+            facetS.setChildren(lst);
+            //System.out.println("StudyView.getStudyFacetS : facetS=[" + facetS + "]");
+
+            facetSet.add(facetS);
+            //System.out.println("StudyView.getStudyFacetS : facetSet=[" + facetSet + "]");
         });
 
         try {
             String facetSJson = objectMapper.writeValueAsString(facetSet);
+            //System.out.println("StudyView.getStudyFacetS : facetSJson=[" + facetSJson + "]");
 
             StringBuilder facets = new StringBuilder();
             facets.append("{");
@@ -743,165 +673,55 @@ public class DataAcquisitionSearch extends Controller {
             facets.append("\"facetsPI\":[]");
             facets.append("}");
 
-            //System.out.println("\n-----Build FACET----------\n" + facets.toString());
+            System.out.println("\n-----Build FACET----------\n" + facets.toString());
 
             studyFacetQuery = facets.toString();
         } catch (Exception e) {
+            log.error("ERROR in StudyView.getStudyFacetQuery", e);
         }
 
         return studyFacetQuery;
     }
 
-    private Map<String, List<String>> createStudyFacetDAFiles() {
+    private Map<String, List<String>> createStudyFacetDAFiles(String[] studyIds) {
+        final String studyPrefix = "http://hadatac.org/kb/hhear#STD-";
+        Map<String, List<String>> mapStudyDas = new HashMap<>();
+        Study study = new Study();
+        Facet facet = new Facet();
 
-        List<String> csv = getDAFilesFromTripleStore();
-
-        Map<String, List<String>> map = new HashMap<String, List<String>>();
-
-
-        csv.forEach(das -> {
-            String key = das.split(",")[0];
-            String da = das.split(",")[1];
-            if (map.containsKey(key)) {
-                List list = map.get(key);
-                list.add(da);
-            } else {
-                List list = new ArrayList<>();
-                list.add(da);
-                map.put(key, list);
-            }
+        Arrays.stream(studyIds).forEach(studyId ->
+        {
+            //System.out.println("StudyView.createStudyFacetDAFiles [study id]: " + studyId);
+            String id = studyPrefix + studyId;
+            facet.putFacet("study_uri_str", id);
         });
-        return map;
+
+        /*Map<String, List<String>> mapFieldValues = facet.getFieldValues();
+        mapFieldValues.forEach((k,v)-> {
+            System.out.println("StudyView.createStudyFacetDAFiles [study ids]: " + v);
+        });*/
+
+        FacetHandler facetHandler = new FacetHandler();
+        Map<Facetable, List<Facetable>> results = study.getTargetFacetsFromTripleStore(facet, facetHandler);
+
+        /*results.forEach((k,v)-> {
+            System.out.println("StudyView.createStudyFacetDAFiles [getTargetFacetsFromTripleStore]: " + v.get(0).getUri());
+        });*/
+
+        results.forEach((stdy,daList) ->
+        {
+            List<String> lst = daList.stream()
+                    .map((obj) -> obj.getUri())
+                    .collect(Collectors.toList());
+
+            //System.out.println("StudyView.createStudyFacetDAFiles [getTargetFacetsFromTripleStore]: " + lst);
+            //lst.forEach(n -> System.out.println(n));
+            mapStudyDas.put(stdy.getUri(), lst);
+        });
+
+        return mapStudyDas;
     }
 
-    private List<String> getDAFilesFromTripleStore() {
-        List<String> csv = new ArrayList<>();
-
-        csv.add("STD-2016-1407,http://hadatac.org/kb/hhear#DA-2016-1407-Lab-NNAL");
-        csv.add("STD-2016-1407,http://hadatac.org/kb/hhear#DA-2016-1407-Lab-Cot");
-        csv.add("STD-2016-1407,http://hadatac.org/kb/hhear#DA-2016-1407-Lab-UEP");
-        csv.add("STD-2016-1407,http://hadatac.org/kb/hhear#DA-2016-1407-Lab-Creatinine");
-        csv.add("STD-2016-1407,http://hadatac.org/kb/hhear#DA-2016-1407-Lab-Phthalates");
-        csv.add("STD-2016-1407,http://hadatac.org/kb/hhear#DA-2016-1407-Lab-PAH");
-        csv.add("STD-2016-1407,http://hadatac.org/kb/hhear#DA-2016-1407-PD-DemoHealth");
-        csv.add("STD-2016-1407,http://hadatac.org/kb/hhear#DA-2016-1407-Lab-SpecGrav");
-        csv.add("STD-2016-1431,http://hadatac.org/kb/hhear#DA-2016-1431-PD-Anthropom-P01");
-        csv.add("STD-2016-1431,http://hadatac.org/kb/hhear#DA-2016-1431-PD-Metabolic-P20");
-        csv.add("STD-2016-1431,http://hadatac.org/kb/hhear#DA-2016-1431-PD-Anthropom-P20");
-        csv.add("STD-2016-1431,http://hadatac.org/kb/hhear#DA-2016-1431-Lab-PAH-SSAMPLES");
-        csv.add("STD-2016-1431,http://hadatac.org/kb/hhear#DA-2016-1431-Lab-PAH-PSAMPLES");
-        csv.add("STD-2016-1431,http://hadatac.org/kb/hhear#DA-2016-1431-PD-Demo");
-        csv.add("STD-2016-1431,http://hadatac.org/kb/hhear#DA-2016-1431-PD-SpecGrav-P01");
-        csv.add("STD-2016-1431,http://hadatac.org/kb/hhear#DA-2016-1431-PD-Metabolic-P01");
-        csv.add("STD-2016-1431,http://hadatac.org/kb/hhear#DA-2016-1431-PD-Exposures-P20");
-        csv.add("STD-2016-1432,http://hadatac.org/kb/hhear#DA-2016-1432-Lab-Inflam");
-        csv.add("STD-2016-1432,http://hadatac.org/kb/hhear#DA-2016-1432-Lab-Metals");
-        csv.add("STD-2016-1432,http://hadatac.org/kb/hhear#DA-2016-1432-PD-DemoHealth");
-        csv.add("STD-2016-1438,http://hadatac.org/kb/hhear#DA-2016-1438-PD-ADOS");
-        csv.add("STD-2016-1438,http://hadatac.org/kb/hhear#DA-2016-1438-PD-Mullen");
-        csv.add("STD-2016-1438,http://hadatac.org/kb/hhear#DA-2016-1438-PD-Demo");
-        csv.add("STD-2016-1438,http://hadatac.org/kb/hhear#DA-2016-1438-PD-Outcome");
-        csv.add("STD-2016-1438,http://hadatac.org/kb/hhear#DA-2016-1438-PD-Covars-3");
-        csv.add("STD-2016-1438,http://hadatac.org/kb/hhear#DA-2016-1438-PD-Covars-2");
-        csv.add("STD-2016-1448,http://hadatac.org/kb/hhear#DA-2016-1448-PD-DemoHealth");
-        csv.add("STD-2016-1449,http://hadatac.org/kb/hhear#DA-2016-1449-Lab-Pesticides-T1");
-        csv.add("STD-2016-1449,http://hadatac.org/kb/hhear#DA-2016-1449-Lab-UEP-T2T3");
-        csv.add("STD-2016-1449,http://hadatac.org/kb/hhear#DA-2016-1449-PD-Mullen");
-        csv.add("STD-2016-1449,http://hadatac.org/kb/hhear#DA-2016-1449-Lab-UEP-T1");
-        csv.add("STD-2016-1449,http://hadatac.org/kb/hhear#DA-2016-1449-PD-Outcome");
-        csv.add("STD-2016-1449,http://hadatac.org/kb/hhear#DA-2016-1449-PD-ADOS");
-        csv.add("STD-2016-1449,http://hadatac.org/kb/hhear#DA-2016-1449-PD-ExposureT2T3");
-        csv.add("STD-2016-1449,http://hadatac.org/kb/hhear#DA-2016-1449-PD-Demo");
-        csv.add("STD-2016-1449,http://hadatac.org/kb/hhear#DA-2016-1449-Lab-Phthalates-T1");
-        csv.add("STD-2016-1449,http://hadatac.org/kb/hhear#DA-2016-1449-PD-ExposureT1");
-        csv.add("STD-2016-1449,http://hadatac.org/kb/hhear#DA-2016-1449-PD-Covars");
-        csv.add("STD-2016-1449,http://hadatac.org/kb/hhear#DA-2016-1449-Lab-SpecGrav-T1");
-        csv.add("STD-2016-1450,http://hadatac.org/kb/hhear#DA-2016-1450-Lab-Phthalates");
-        csv.add("STD-2016-1450,http://hadatac.org/kb/hhear#DA-2016-1450-PD-DemoHealth");
-        csv.add("STD-2016-1450,http://hadatac.org/kb/hhear#DA-2016-1450-Lab-Smoke");
-        csv.add("STD-2016-1450,http://hadatac.org/kb/hhear#DA-2016-1450-Lab-PAH");
-        csv.add("STD-2016-1450,http://hadatac.org/kb/hhear#DA-2016-1450-Lab-VOC");
-        csv.add("STD-2016-1450,http://hadatac.org/kb/hhear#DA-2016-1450-Lab-Creatinine");
-        csv.add("STD-2016-1450,http://hadatac.org/kb/hhear#DA-2016-1450-Lab-Oxid");
-        csv.add("STD-2016-1450,http://hadatac.org/kb/hhear#DA-2016-1450-Lab-Inflam");
-        csv.add("STD-2016-1461,http://hadatac.org/kb/hhear#DA-2016-1461-Lab-UEP");
-        csv.add("STD-2016-1461,http://hadatac.org/kb/hhear#DA-2016-1461-Lab-Phthalates");
-        csv.add("STD-2016-1461,http://hadatac.org/kb/hhear#DA-2016-1461-PD-DemoHealth");
-        csv.add("STD-2016-1461,http://hadatac.org/kb/hhear#DA-2016-1461-Lab-PFC");
-        csv.add("STD-2016-1461,http://hadatac.org/kb/hhear#DA-2016-1461-Lab-Pesticides");
-        csv.add("STD-2016-1461,http://hadatac.org/kb/hhear#DA-2016-1461-Lab-Metals");
-        csv.add("STD-2016-1523,http://hadatac.org/kb/hhear#DA-2016-1523-PD-DemoHealth");
-        csv.add("STD-2016-1523,http://hadatac.org/kb/hhear#DA-2016-1523-Lab-USMOKE");
-        csv.add("STD-2016-1523,http://hadatac.org/kb/hhear#DA-2016-1523-Lab-CRE");
-        csv.add("STD-2016-1534,http://hadatac.org/kb/hhear#DA-2016-1534-Lab-UDILUTE");
-        csv.add("STD-2016-1534,http://hadatac.org/kb/hhear#DA-2016-1534-Lab-UPHTH");
-        csv.add("STD-2016-1534,http://hadatac.org/kb/hhear#DA-2016-1534-PD-DemoHealth");
-        csv.add("STD-2016-34,http://hadatac.org/kb/hhear#DA-2016-34-Lab-Metals");
-        csv.add("STD-2016-34,http://hadatac.org/kb/hhear#DA-2016-34-PD-DemoHealth");
-        csv.add("STD-2016-34,http://hadatac.org/kb/hhear#DA-2016-34-Lab-Creatinine");
-        csv.add("STD-2017-1598,http://hadatac.org/kb/hhear#DA-2017-1598-Lab-UOPFR");
-        csv.add("STD-2017-1598,http://hadatac.org/kb/hhear#DA-2017-1598-Lab-TRACE");
-        csv.add("STD-2017-1598,http://hadatac.org/kb/hhear#DA-2017-1598-Lab-HG");
-        csv.add("STD-2017-1598,http://hadatac.org/kb/hhear#DA-2017-1598-Lab-UPEST");
-        csv.add("STD-2017-1598,http://hadatac.org/kb/hhear#DA-2017-1598-PD-DemoHealth");
-        csv.add("STD-2017-1598,http://hadatac.org/kb/hhear#DA-2017-1598-Lab-UDILUTE");
-        csv.add("STD-2017-1598,http://hadatac.org/kb/hhear#DA-2017-1598-Lab-UPAH");
-        csv.add("STD-2017-1598,http://hadatac.org/kb/hhear#DA-2017-1598-Lab-UPHTH");
-        csv.add("STD-2017-1598,http://hadatac.org/kb/hhear#DA-2017-1598-Lab-UPHENOL-UPB");
-        csv.add("STD-2017-1740,http://hadatac.org/kb/hhear#DA-2017-1740-Lab-Metals");
-        csv.add("STD-2017-1740,http://hadatac.org/kb/hhear#DA-2017-1740-Lab-Mercury");
-        csv.add("STD-2017-1740,http://hadatac.org/kb/hhear#DA-2017-1740-PD-DemoHealth");
-        csv.add("STD-2017-1762,http://hadatac.org/kb/hhear#DA-2017-1762-Lab-CotB");
-        csv.add("STD-2017-1762,http://hadatac.org/kb/hhear#DA-2017-1762-Lab-CotA");
-        csv.add("STD-2017-1762,http://hadatac.org/kb/hhear#DA-2017-1762-PD-DemoHealth");
-        csv.add("STD-2017-1762,http://hadatac.org/kb/hhear#DA-2017-1762-Lab-Inflam");
-        csv.add("STD-2017-1945,http://hadatac.org/kb/hhear#DA-2017-1945-Lab-Metals");
-        csv.add("STD-2017-1945,http://hadatac.org/kb/hhear#DA-2017-1945-PD-DemoHealth");
-        csv.add("STD-2017-1977,http://hadatac.org/kb/hhear#DA-2017-1977-Lab-UPHEN");
-        csv.add("STD-2017-1977,http://hadatac.org/kb/hhear#DA-2017-1977-PD-DemoHealth");
-        csv.add("STD-2017-1977,http://hadatac.org/kb/hhear#DA-2017-1977-Lab-UPHTH");
-        csv.add("STD-2017-1977,http://hadatac.org/kb/hhear#DA-2017-1977-Lab-UTE");
-        csv.add("STD-2017-1977,http://hadatac.org/kb/hhear#DA-2017-1977-PD-EDCs");
-        csv.add("STD-2017-1977,http://hadatac.org/kb/hhear#DA-2017-1977-Lab-UPAH");
-        csv.add("STD-2017-1977,http://hadatac.org/kb/hhear#DA-2017-1977-Lab-CRE");
-        csv.add("STD-2017-2121,http://hadatac.org/kb/hhear#DA-2017-2121-PD-FirstVoid");
-        csv.add("STD-2017-2121,http://hadatac.org/kb/hhear#DA-2017-2121-PD-DemoHealth");
-        csv.add("STD-2017-2121,http://hadatac.org/kb/hhear#DA-2017-2121-Lab-Phthalates");
-        csv.add("STD-2017-2121,http://hadatac.org/kb/hhear#DA-2017-2121-Lab-UPAH");
-        csv.add("STD-2017-2121,http://hadatac.org/kb/hhear#DA-2017-2121-Lab-UPEST_UPMs");
-        csv.add("STD-2017-2121,http://hadatac.org/kb/hhear#DA-2017-2121-Lab-Oxid");
-        csv.add("STD-2017-2121,http://hadatac.org/kb/hhear#DA-2017-2121-Lab-Creatinine");
-        csv.add("STD-2017-2121,http://hadatac.org/kb/hhear#DA-2017-2121-Lab-UPHENOL_UPB");
-        csv.add("STD-2017-2121,http://hadatac.org/kb/hhear#DA-2017-2121-Lab-UPEST_DAPs");
-        csv.add("STD-2017-2121,http://hadatac.org/kb/hhear#DA-2017-2121-Lab-Inflam");
-        csv.add("STD-2018-2120,http://hadatac.org/kb/hhear#DA-2018-2120-Lab-USMOKE_Plasma");
-        csv.add("STD-2018-2120,http://hadatac.org/kb/hhear#DA-2018-2120-Lab-Phthalates");
-        csv.add("STD-2018-2120,http://hadatac.org/kb/hhear#DA-2018-2120-Lab-Creatinine");
-        csv.add("STD-2018-2120,http://hadatac.org/kb/hhear#DA-2018-2120-PD-DemoHealth");
-        csv.add("STD-2018-2120,http://hadatac.org/kb/hhear#DA-2018-2120-Lab-USMOKE_Urine");
-        csv.add("STD-2018-2273,http://hadatac.org/kb/hhear#DA-2018-2273-Lab-UDILUTE");
-        csv.add("STD-2018-2273,http://hadatac.org/kb/hhear#DA-2018-2273-Lab-UTE");
-        csv.add("STD-2018-2273,http://hadatac.org/kb/hhear#DA-2018-2273-PD-DemoHealth");
-        csv.add("STD-2018-2273,http://hadatac.org/kb/hhear#DA-2018-2273-Lab-SPFAS");
-        csv.add("STD-2018-2273,http://hadatac.org/kb/hhear#DA-2018-2273-Lab-UPHTH");
-        csv.add("STD-2018-2273,http://hadatac.org/kb/hhear#DA-2018-2273-Lab-UPHEN-UPB");
-        csv.add("STD-2018-2517,http://hadatac.org/kb/hhear#DA-2018-2517-PD-SES");
-        csv.add("STD-2018-2517,http://hadatac.org/kb/hhear#DA-2018-2517-PD-DemoHealth");
-        csv.add("STD-2018-2517,http://hadatac.org/kb/hhear#DA-2018-2517-Lab-UTE");
-        csv.add("STD-2018-2532,http://hadatac.org/kb/hhear#DA-2018-2532-Lab-UEP");
-        csv.add("STD-2018-2532,http://hadatac.org/kb/hhear#DA-2018-2532-Lab-SG");
-        csv.add("STD-2018-2532,http://hadatac.org/kb/hhear#DA-2018-2532-Lab-PHTH");
-        csv.add("STD-2018-2532,http://hadatac.org/kb/hhear#DA-2018-2532-Lab-UM1");
-        csv.add("STD-2018-2532,http://hadatac.org/kb/hhear#DA-2018-2532-Lab-PAH");
-        csv.add("STD-2018-2532,http://hadatac.org/kb/hhear#DA-2018-2532-PD-DemoHealth");
-        csv.add("STD-2018-2537,http://hadatac.org/kb/hhear#DA-2018-2537-Lab-SG");
-        csv.add("STD-2018-2537,http://hadatac.org/kb/hhear#DA-2018-2537-Lab-PHTH");
-        csv.add("STD-2018-2537,http://hadatac.org/kb/hhear#DA-2018-2537-PD-DemoHealth");
-        csv.add("STD-2018-2539,http://hadatac.org/kb/hhear#DA-2018-2539-PD-DemoHealth");
-        csv.add("STD-2018-2539,http://hadatac.org/kb/hhear#DA-2018-2539-Lab-SPFAS");
-
-        return csv;
-    }
 
     private class FacetS {
         private String id;
@@ -928,6 +748,12 @@ public class DataAcquisitionSearch extends Controller {
             return children;
         }
 
+        public FacetS(String id, String study_uri_str)
+        {
+            this.id = id;
+            this.study_uri_str = study_uri_str;
+        }
+
         public void setChildren(List<DAChild> children) {
             this.children = children;
         }
@@ -936,6 +762,12 @@ public class DataAcquisitionSearch extends Controller {
     private class DAChild {
         private String id;
         private String acquisition_uri_str;
+
+        public DAChild(String id, String acquisition_uri_str)
+        {
+            this.id = id;
+            this.acquisition_uri_str = acquisition_uri_str;
+        }
 
         public String getId() {
             return id;
