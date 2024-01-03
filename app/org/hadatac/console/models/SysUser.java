@@ -494,15 +494,15 @@ public class SysUser implements Subject {
 
 	public static SysUser findByEmailSolr(final String email) {
 		if(email.isEmpty()){
-			// System.out.println("Email is empty");
+			System.out.println("Email is empty");
 			return null;
 		}
 		List<SysUser> users = getEmailUserFindSolr(email);
 		if (users.size() == 1) {
-			// System.out.println("USER found:"+users.get(0));
+			System.out.println("USER found:"+users.get(0));
 			return users.get(0);
 		} else {
-			// System.out.println("USER NOT found:");
+			System.out.println("USER NOT found:");
 			return null;
 		}
 	}
@@ -521,7 +521,12 @@ public class SysUser implements Subject {
 		try {
 			QueryResponse queryResponse = solrClient.query(solrQuery);
 			solrClient.close();
+
+			System.out.println("solrQuery= " + solrQuery.toQueryString());
+			System.out.println("queryResponse.getStatus()= " + queryResponse.getStatus());
+
 			SolrDocumentList list = queryResponse.getResults();
+			System.out.println("SolrDocumentList size= " + list.size());
 			Iterator<SolrDocument> i = list.iterator();
 			while (i.hasNext()) {
 				SysUser user = convertSolrDocumentToUser(i.next());

@@ -4,8 +4,8 @@ import be.objectify.deadbolt.java.actions.SubjectNotPresent;
 import com.typesafe.config.ConfigFactory;
 import module.SecurityModule;
 import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.hadatac.Constants;
-import org.hadatac.console.controllers.dataacquisitionsearch.DataAcquisitionSearch;
 import org.hadatac.console.controllers.triplestore.UserManagement;
 import org.hadatac.console.models.*;
 import org.hadatac.console.providers.*;
@@ -344,27 +344,53 @@ public class Signup {
             SysUser user = SysUser.findByEmail(formData.get().getEmail());
             application.formIndex(request,user,playSessionStore,playWebContext);
 
-            Map params = request.queryString();
-            //params.forEach((K,V) -> System.out.println(K + ", value : " + V));
+            /*Map params = request.queryString();
+            params.forEach((K,V) -> System.out.println(K + ", value : " + V));
             System.out.println("formData= " + formData);
+            */
 
             String source = formData.get().getSource();
             String studyIds = formData.get().getStudyId();
             String studyPageRef = formData.get().getStudyPageRef();
 
-            if(!StringUtil.isNullOrEmpty(source) && !StringUtil.isNullOrEmpty(studyPageRef) && source.equals("studypage")) {
+            if(!StringUtils.isNotBlank(source) && !StringUtils.isNotBlank(studyPageRef) && source.equals("studypage")) {
                 studyPageRef = "/" +studyPageRef+"&source="+source;
                 //System.out.println("studyPageRef= " + studyPageRef);
                 return ok (studyPageRef).addingToSession(request ,"userValidated", "yes");
             }
-            else if(!StringUtil.isNullOrEmpty(source) && source.equals("generateDataSet")) {
+            else if(!StringUtils.isNotBlank(source) && source.equals("generateDataSet")) {
                 String pageRef = "/" +studyPageRef+"&source="+source+"&studyIds="+studyIds;;
-                System.out.println("PageRef= " + pageRef);
+                //System.out.println("PageRef= " + pageRef);
 
                 return ok (pageRef).addingToSession(request ,"userValidated", "yes");
             }
 
             return ok ("/hadatac").addingToSession(request ,"userValidated", "yes");
+        }
+        return badRequest("what happened?");
+    }
+
+    public Result establishUserSession(Http.Request request) throws TechnicalException {
+        if("false".equalsIgnoreCase(ConfigFactory.load().getString("hadatac.ThirdPartyUser.userRedirection"))) return badRequest("Operation not allowed");
+        final Form<MyUsernamePasswordAuthProvider> formData = form.bindFromRequest(request);
+        if ( formData != null && !formData.hasErrors()) {
+            System.out.println("\n Redirected from Third party Portal:"+request.host());
+            if (SysUser.findByEmail(formData.get().getEmail()) == null && !formData.get().getEmail().isEmpty()) {
+                System.out.println("User Does not exist, Signing up");
+                MyUsernamePasswordAuthProvider data = formData.get();
+                settingUpAccount(data,true);
+                //Adding new user to manage Users
+                addUsertoManageUsers(request,data);
+            }
+            //Create profile for user trying to login
+            final PlayWebContext playWebContext = createUserProfile(request,formData.get().getEmail());
+//            System.out.println("checkUserExists create user profile:"+userEmail+"\n application.getSessionStore()):"+application.getSessionStore().getOrCreateSessionId(playWebContext));
+
+            //Login user
+            System.out.println("Logging in user redirected from Third party: "+playSessionStore.getOrCreateSessionId(playWebContext));
+            SysUser user = SysUser.findByEmail(formData.get().getEmail());
+            application.formIndex(request,user,playSessionStore,playWebContext);
+            return ok ();
         }
         return badRequest("what happened?");
     }
@@ -421,4 +447,5 @@ public class Signup {
         return playWebContext;
 
     }
+
 }

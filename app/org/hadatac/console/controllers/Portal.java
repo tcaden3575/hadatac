@@ -1,5 +1,6 @@
 package org.hadatac.console.controllers;
 
+import org.hadatac.console.providers.UserProvider;
 import org.hadatac.console.views.html.landingPage;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -36,7 +37,11 @@ public class Portal extends Controller {
                             + "The namespace store is set to be without quads. Ask Administrator for further information. "
                             + "</h4></div>")));
         }
+
+        UserProvider userProvider = AuthApplication.getAuthApplication().getUserProvider();
+        System.out.println("Portal-userProvider="+ userProvider);
         SysUser user = AuthApplication.getAuthApplication().getUserProvider().getUser(application.getUserEmail(request));
+        //SysUser user = SysUser.findByEmail(application.getUserEmail(request));
 
         if (user == null) {
             return ok(landingPage.render(application.getUserEmail(request)));

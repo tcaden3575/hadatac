@@ -80,27 +80,71 @@
             }*/
 
             let count =0;
+            let Success = false;
             window.addEventListener('message', function (e) {
                 var obj = JSON.parse(e.data);
                 // console.log("inside script:"+e.origin);
                 // console.log(e.data);
                 console.log(obj);
-                // data1 = obj;
+
                 obj.name = obj.username;
                 obj.repeatPassword = obj.password;
-                 count=count+1;
-                if(count.valueOf()<3 && e.origin =="@ConfigFactory.load().getString("hadatac.ThirdPartyUser.oauth.origin")" && obj.appGuid =="@ConfigFactory.load().getString("hadatac.ThirdPartyUser.oauth.tokenUrl")"){
-                    $.ajax({
-                        type: 'POST',
-                        url: '/hadatac/checkUser/',
-                        data: obj,
-                        success: function (response) {
-                            console.log(response);
-                            location.replace(response);
-                        },
-                    });
+
+                count++;
+                if(count.valueOf()<3 && !Success && e.origin =="@ConfigFactory.load().getString("hadatac.ThirdPartyUser.oauth.origin")" && obj.appGuid =="@ConfigFactory.load().getString("hadatac.ThirdPartyUser.oauth.tokenUrl")"){
+                    Success = establishUserSession(obj);
+                    alert(Success);
+                    if(!Success) {
+                        console.log("Establish Session Again");
+                        alert("Establish Session Again = " + count);
+                        establishUserSession(obj);
+                    }
                 }
             }, false);
+
+
+            function signInUser(obj) {
+                 $.ajax({
+                    type: 'POST',
+                    url: '/hadatac/checkUser/',
+                    data: obj,
+                    success: function (response) {
+                        console.log(response);
+                        alert("Signed in User");
+                        console.log("Signed in User");
+                        location.replace(response);
+                    },
+                    error: function(result) {
+                        console.log("Error Signing In User");
+                        alert("Error Signing In User");
+                    }
+                });
+            }
+
+            function establishUserSession(obj) {
+                let Success = false;
+                 $.ajax({
+                    type: 'POST',
+                    url: '/hadatac/establishUserSession/',
+                    data: obj,
+                    cache: false,
+                    async: false,
+                }).done(function (response) {
+                    console.log(response);
+                    Success = true;
+                    alert(response);
+                    alert("Session Established");
+                    console.log("Session Established");
+                    signInUser(obj);
+                }).fail(function (response) {
+                    console.log(response);
+                    Success = false;
+                    alert("Session Not Established");
+                    console.log("Session Not Established");
+                });
+                return Success;
+            }
+
     </script>
 }
 
