@@ -521,12 +521,7 @@ public class SysUser implements Subject {
 		try {
 			QueryResponse queryResponse = solrClient.query(solrQuery);
 			solrClient.close();
-
-			System.out.println("solrQuery= " + solrQuery.toQueryString());
-			System.out.println("queryResponse.getStatus()= " + queryResponse.getStatus());
-
 			SolrDocumentList list = queryResponse.getResults();
-			System.out.println("SolrDocumentList size= " + list.size());
 			Iterator<SolrDocument> i = list.iterator();
 			while (i.hasNext()) {
 				SysUser user = convertSolrDocumentToUser(i.next());

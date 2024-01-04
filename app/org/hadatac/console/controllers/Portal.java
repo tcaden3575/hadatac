@@ -1,7 +1,7 @@
 package org.hadatac.console.controllers;
 
-import org.hadatac.console.providers.UserProvider;
 import org.hadatac.console.views.html.landingPage;
+import org.pac4j.play.PlayWebContext;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -38,14 +38,22 @@ public class Portal extends Controller {
                             + "</h4></div>")));
         }
 
-        UserProvider userProvider = AuthApplication.getAuthApplication().getUserProvider();
-        System.out.println("Portal-userProvider="+ userProvider);
+        System.out.println("Portal:index->application.getUserEmail(request)"+application.getUserEmail(request)+"\n\n");
         SysUser user = AuthApplication.getAuthApplication().getUserProvider().getUser(application.getUserEmail(request));
-        //SysUser user = SysUser.findByEmail(application.getUserEmail(request));
+
+        //final PlayWebContext context = new PlayWebContext(request, playSessionStore);
+        //System.out.println("SignUp:createUserProfile->getSessionId():"+application.getPlayWebContext().getSessionStore().getOrCreateSessionId(playWebContext)+"\n\n");
+        //System.out.println("SignUp:createUserProfile->getSessionId():"+context.getSessionStore().getOrCreateSessionId(playWebContext)+"\n\n");
+
+        System.out.println("Portal:index->SysUser user is = "+user+"\n\n");
 
         if (user == null) {
+            System.out.println("Portal:index->user is null = "+user+"\n\n");
+            System.out.println("Portal:index->application.getUserEmail(request)"+application.getUserEmail(request)+"\n\n");
             return ok(landingPage.render(application.getUserEmail(request)));
         } else {
+            System.out.println("Portal:index->user is not null = "+user.getEmail()+"\n\n");
+            System.out.println("Portal:index->application.getUserEmail(request)"+application.getUserEmail(request)+"\n\n");
             return ok(portal.render(application.getUserEmail(request)));
         }
     }

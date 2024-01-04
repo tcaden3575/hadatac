@@ -89,7 +89,7 @@ public class Application extends Controller {
             final PlayWebContext context = getPlayWebContext()!=null? getPlayWebContext():new PlayWebContext(request, playSessionStore);
             final ProfileManager<CommonProfile> profileManager = new ProfileManager(context,playSessionStore);
             final String userEmail =  profileManager.get(true).isEmpty() ? "": profileManager.get(true).get().getUsername();
-            System.out.println("getUserEmail:"+userEmail+"\n sessionId:"+playSessionStore.getOrCreateSessionId(context));
+            System.out.println("Application:getUserEmail:"+userEmail+"\n sessionId:"+playSessionStore.getOrCreateSessionId(context));
             return userEmail;
         }
         final String userEmail = (getProfile(request) == null) ? "" : getProfile(request).getUsername();
@@ -135,8 +135,10 @@ public class Application extends Controller {
     public Result formIndex(Http.Request request) {
         SysUser user = SysUser.findByEmail(getUserEmail(request));
         if(null != user && user.isDataManager()){
+            System.out.println("Application:formIndex->user.isDataManager()"+user.getEmail()+"\n\n");
             return ok(protectedIndex.render(user.getEmail()));
         }
+        System.out.println("Application:formIndex->user is null OR not user.isDataManager()"+user.getEmail()+"\n\n");
         return ok(portal.render(getUserEmail(request)));
     }
 
@@ -333,8 +335,8 @@ public class Application extends Controller {
 
     public void formIndex(Http.Request request, SysUser sysUserValue, PlaySessionStore sessionStore, PlayWebContext webContext){
         sysUser = sysUserValue;
-        playSessionStore = sessionStore;
-        setSessionStore(sessionStore);
+        //playSessionStore = sessionStore;
+        //setSessionStore(sessionStore);
         setPlayWebContext(webContext);
         formIndex(request);
 

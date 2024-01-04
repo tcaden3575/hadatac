@@ -4,7 +4,6 @@ import be.objectify.deadbolt.java.actions.SubjectNotPresent;
 import com.typesafe.config.ConfigFactory;
 import module.SecurityModule;
 import org.apache.commons.lang.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.hadatac.Constants;
 import org.hadatac.console.controllers.triplestore.UserManagement;
 import org.hadatac.console.models.*;
@@ -54,7 +53,6 @@ import static play.libs.Scala.asScala;
 import static play.mvc.Results.*;
 import static play.shaded.ahc.io.netty.util.internal.SystemPropertyUtil.get;
 import org.hadatac.console.providers.SimpleTestUsernamePasswordAuthenticator;
-import play.shaded.ahc.io.netty.util.internal.StringUtil;
 
 
 public class Signup {
@@ -340,57 +338,10 @@ public class Signup {
 //            System.out.println("checkUserExists create user profile:"+userEmail+"\n application.getSessionStore()):"+application.getSessionStore().getOrCreateSessionId(playWebContext));
 
             //Login user
-            System.out.println("Logging in user redirected from Third party: "+playSessionStore.getOrCreateSessionId(playWebContext));
+            System.out.println("Logging in user redirected from Third party: "+application.getSessionStore().getOrCreateSessionId(playWebContext));
             SysUser user = SysUser.findByEmail(formData.get().getEmail());
             application.formIndex(request,user,playSessionStore,playWebContext);
-
-            /*Map params = request.queryString();
-            params.forEach((K,V) -> System.out.println(K + ", value : " + V));
-            System.out.println("formData= " + formData);
-            */
-
-            String source = formData.get().getSource();
-            String studyIds = formData.get().getStudyId();
-            String studyPageRef = formData.get().getStudyPageRef();
-
-            if(!StringUtils.isNotBlank(source) && !StringUtils.isNotBlank(studyPageRef) && source.equals("studypage")) {
-                studyPageRef = "/" +studyPageRef+"&source="+source;
-                //System.out.println("studyPageRef= " + studyPageRef);
-                return ok (studyPageRef).addingToSession(request ,"userValidated", "yes");
-            }
-            else if(!StringUtils.isNotBlank(source) && source.equals("generateDataSet")) {
-                String pageRef = "/" +studyPageRef+"&source="+source+"&studyIds="+studyIds;;
-                //System.out.println("PageRef= " + pageRef);
-
-                return ok (pageRef).addingToSession(request ,"userValidated", "yes");
-            }
-
             return ok ("/hadatac").addingToSession(request ,"userValidated", "yes");
-        }
-        return badRequest("what happened?");
-    }
-
-    public Result establishUserSession(Http.Request request) throws TechnicalException {
-        if("false".equalsIgnoreCase(ConfigFactory.load().getString("hadatac.ThirdPartyUser.userRedirection"))) return badRequest("Operation not allowed");
-        final Form<MyUsernamePasswordAuthProvider> formData = form.bindFromRequest(request);
-        if ( formData != null && !formData.hasErrors()) {
-            System.out.println("\n Redirected from Third party Portal:"+request.host());
-            if (SysUser.findByEmail(formData.get().getEmail()) == null && !formData.get().getEmail().isEmpty()) {
-                System.out.println("User Does not exist, Signing up");
-                MyUsernamePasswordAuthProvider data = formData.get();
-                settingUpAccount(data,true);
-                //Adding new user to manage Users
-                addUsertoManageUsers(request,data);
-            }
-            //Create profile for user trying to login
-            final PlayWebContext playWebContext = createUserProfile(request,formData.get().getEmail());
-//            System.out.println("checkUserExists create user profile:"+userEmail+"\n application.getSessionStore()):"+application.getSessionStore().getOrCreateSessionId(playWebContext));
-
-            //Login user
-            System.out.println("Logging in user redirected from Third party: "+playSessionStore.getOrCreateSessionId(playWebContext));
-            SysUser user = SysUser.findByEmail(formData.get().getEmail());
-            application.formIndex(request,user,playSessionStore,playWebContext);
-            return ok ();
         }
         return badRequest("what happened?");
     }
@@ -434,7 +385,7 @@ public class Signup {
     private  PlayWebContext createUserProfile(Http.Request request, String userName){
         SimpleTestUsernamePasswordAuthenticator test = new SimpleTestUsernamePasswordAuthenticator();
         final CommonProfile profile = new CommonProfile();
-        final PlayWebContext playWebContext = new PlayWebContext(request, playSessionStore);
+        final PlayWebContext playWebContext = new PlayWebContext(request, application.getSessionStore());
         final ProfileManager<CommonProfile> profileManager = new ProfileManager(playWebContext);
         final SysUser sysUser = SysUser.findByEmailSolr(userName);
         profile.setId(sysUser.getEmail());
@@ -442,10 +393,9 @@ public class Signup {
         profile.setRoles(test.getUserRoles(sysUser));
         profile.setRemembered(true);
         profileManager.save(true, profile, true);
-//        System.out.println("createUserProfile->getSessionId():"+playSessionStore.getOrCreateSessionId(playWebContext)+"\n\n");
-        application.setSessionStore(playSessionStore);
+        System.out.println("SignUp:createUserProfile->getSessionId():"+application.getSessionStore().getOrCreateSessionId(playWebContext)+"\n\n");
+        //application.setSessionStore(playSessionStore);
         return playWebContext;
 
     }
-
 }
