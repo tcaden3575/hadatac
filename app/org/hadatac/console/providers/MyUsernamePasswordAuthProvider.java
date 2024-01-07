@@ -53,11 +53,7 @@ public class MyUsernamePasswordAuthProvider implements MyAuthUserIdentity{
     @Constraints.MinLength(5)
     private String password;
     private String repeatPassword;
-
-    private String source;
-    private String studyPageRef;
-    private String studyId;
-    private String studyIds;
+    private String userValidated;
 
     private MessagesApi messagesApi;
     private Config config;
@@ -138,28 +134,12 @@ public class MyUsernamePasswordAuthProvider implements MyAuthUserIdentity{
         this.repeatPassword = repeatPassword;
     }
 
-    public String getSource() { return source; }
-
-    public void setSource(String source) {this.source = source; }
-
-    public String getStudyPageRef() { return studyPageRef; }
-
-    public void setStudyPageRef(String studyPageRef) {this.studyPageRef = studyPageRef;}
-
-    public String getStudyId() {
-        return studyId;
+    public String getUserValidated() {
+        return this.userValidated;
     }
 
-    public void setStudyId(String studyId) {
-        this.studyId = studyId;
-    }
-
-    public String getStudyIds() {
-        return studyIds;
-    }
-
-    public void setStudyIds(String studyIds) {
-        this.studyIds = studyIds;
+    public void setUserValidated(String userValidated) {
+        this.userValidated = userValidated;
     }
 
     public String validate() {

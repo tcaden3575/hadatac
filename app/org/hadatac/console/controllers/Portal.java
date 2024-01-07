@@ -1,7 +1,7 @@
 package org.hadatac.console.controllers;
 
+import org.apache.commons.lang.StringUtils;
 import org.hadatac.console.views.html.landingPage;
-import org.pac4j.play.PlayWebContext;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -13,6 +13,8 @@ import org.hadatac.console.models.SysUser;
 import org.hadatac.utils.Repository;
 
 import javax.inject.Inject;
+import java.util.Map;
+import java.util.Optional;
 
 public class Portal extends Controller {
     @Inject Application application;
@@ -38,26 +40,54 @@ public class Portal extends Controller {
                             + "</h4></div>")));
         }
 
-        System.out.println("Portal:index->application.getUserEmail(request)"+application.getUserEmail(request)+"\n\n");
-        SysUser user = AuthApplication.getAuthApplication().getUserProvider().getUser(application.getUserEmail(request));
+        Optional<String> userValidatedSessionValue = getSessionParameters( request, "userValidated");
+        String userValidated = (userValidatedSessionValue.isPresent()) ? userValidatedSessionValue.get() : null;
+        System.out.println("Portal:index-->session userValidated: "+ userValidated);
 
-        //final PlayWebContext context = new PlayWebContext(request, playSessionStore);
-        //System.out.println("SignUp:createUserProfile->getSessionId():"+application.getPlayWebContext().getSessionStore().getOrCreateSessionId(playWebContext)+"\n\n");
-        //System.out.println("SignUp:createUserProfile->getSessionId():"+context.getSessionStore().getOrCreateSessionId(playWebContext)+"\n\n");
+        Optional<String> userEmailSessionValue = getSessionParameters( request, "userEmail");
+        String userEmail = (userEmailSessionValue.isPresent()) ? userEmailSessionValue.get() : null;
+        System.out.println("Portal:index-->session userEmail: "+ userEmail);
 
-        System.out.println("Portal:index->SysUser user is = "+user+"\n\n");
+        //System.out.println("Portal:index->application.getUserEmail(request): "+application.getUserEmail(request)+"\n\n");
+        //SysUser user = AuthApplication.getAuthApplication().getUserProvider().getUser(application.getUserEmail(request));
+        SysUser user = AuthApplication.getAuthApplication().getUserProvider().getUser(userEmail);
+        System.out.println("Portal:index->SysUser user is = "+user+"\n");
+
+        /*if(userValidated.equalsIgnoreCase("yes"))
+        {
+            //String email = application.getUserEmail(request);
+            System.out.println("Portal:index->application.getUserEmail(request): "+userEmail+"\n");
+            if(StringUtils.isNotBlank(userEmail)) {
+                System.out.println("Portal:index-> email: "+userEmail+"\n");
+                System.out.println("Portal:index->user is null = "+user+"\n");
+                System.out.println("Portal:index->redirecting to Portal page \n");
+                //return ok(portal.render(userEmail));
+            }
+            System.out.println("Portal:index-> email not found: "+userEmail+"\n");
+        }*/
 
         if (user == null) {
-            System.out.println("Portal:index->user is null = "+user+"\n\n");
-            System.out.println("Portal:index->application.getUserEmail(request)"+application.getUserEmail(request)+"\n\n");
-            return ok(landingPage.render(application.getUserEmail(request)));
+            System.out.println("Portal:index->user is null = "+user+"\n");
+            System.out.println("Portal:index->application.getUserEmail(request)"+userEmail+"\n");
+            System.out.println("Portal:index->redirecting to Landing page \n");
+            return ok(landingPage.render(userEmail));
+            //return ok(landingPage.render(application.getUserEmail(request)));
         } else {
             System.out.println("Portal:index->user is not null = "+user.getEmail()+"\n\n");
-            System.out.println("Portal:index->application.getUserEmail(request)"+application.getUserEmail(request)+"\n\n");
-            return ok(portal.render(application.getUserEmail(request)));
+            System.out.println("Portal:index->application.getUserEmail(request)"+userEmail+"\n");
+            System.out.println("Portal:index->redirecting to Portal page \n");
+            return ok(portal.render(userEmail));
+            //return ok(portal.render(application.getUserEmail(request)));
         }
     }
 
     public Result postIndex(Http.Request request){
         return ok(portal.render(application.getUserEmail(request)));}
+
+
+    public Optional<String> getSessionParameters(Http.Request request, String param) {
+        return request
+                .session()
+                .get(param);
+    }
 }

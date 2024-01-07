@@ -338,8 +338,7 @@ public class Application extends Controller {
         //playSessionStore = sessionStore;
         //setSessionStore(sessionStore);
         setPlayWebContext(webContext);
-        formIndex(request);
-
+        //formIndex(request);
     }
     private SysUser getSysUser(){return sysUser;}
     private void setSysUser(SysUser sysUserNew){ sysUser=sysUserNew;}

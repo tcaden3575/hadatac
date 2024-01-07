@@ -1,6 +1,8 @@
 package org.hadatac.console.controllers;
 
 import be.objectify.deadbolt.java.actions.SubjectNotPresent;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.typesafe.config.ConfigFactory;
 import module.SecurityModule;
 import org.apache.commons.lang.RandomStringUtils;
@@ -38,6 +40,7 @@ import play.api.libs.mailer.MailerClient;
 import play.filters.headers.SecurityHeadersFilter;
 import play.i18n.MessagesApi;
 import play.data.validation.Constraints;
+import play.libs.Json;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.data.Form;
@@ -333,15 +336,63 @@ public class Signup {
                 //Adding new user to manage Users
                 addUsertoManageUsers(request,data);
             }
+
+            String currentUserValidated = formData.get().getUserValidated();
+            //System.out.println("SignUp:checkUserExists--> Ajax session userValidated: "+ currentUserValidated);
+
+            String userValidated = currentUserValidated;
+            //System.out.println("SignUp:checkUserExists--> Ajax session userValidated: "+ userValidated);
+            /*if(null!=userValidated && userValidated.equalsIgnoreCase("yes")) {
+                try {
+                    System.out.println("SignUp:checkUserExists--> sleep");
+                    Thread.sleep(60000);
+                } catch (InterruptedException e) {
+                    System.out.println("Exception: SignUp:checkUserExists--> sleep");
+                    //e.printStackTrace();
+                }
+            }*/
+
             //Create profile for user trying to login
             final PlayWebContext playWebContext = createUserProfile(request,formData.get().getEmail());
-//            System.out.println("checkUserExists create user profile:"+userEmail+"\n application.getSessionStore()):"+application.getSessionStore().getOrCreateSessionId(playWebContext));
+            System.out.println("SignUp:checkUserExists-->create user profile --> check:"+formData.get().getEmail()+"\n --->application.getSessionStore()):"+application.getSessionStore().getOrCreateSessionId(playWebContext));
 
             //Login user
-            System.out.println("Logging in user redirected from Third party: "+application.getSessionStore().getOrCreateSessionId(playWebContext));
+            System.out.println("\nLogging in user redirected from Third party, Session Id: "+application.getSessionStore().getOrCreateSessionId(playWebContext));
             SysUser user = SysUser.findByEmail(formData.get().getEmail());
+            System.out.println("SignUp:checkUserExists-->user: "+ ((null==user) ? user : user.getId()));
             application.formIndex(request,user,playSessionStore,playWebContext);
-            return ok ("/hadatac").addingToSession(request ,"userValidated", "yes");
+
+            SysUser sysUser = AuthApplication.getAuthApplication().getUserProvider().getUser(application.getUserEmail(request));
+            System.out.println("SignUp:checkUserExists->SysUser sysUser is = "+sysUser+"\n\n");
+
+            Optional<String> userValidatedSession = getSessionParameter( request, "userValidated");
+            String userValidatedSessionValue = (userValidatedSession.isPresent()) ? userValidatedSession.get() : null;
+            //System.out.println("SignUp:checkUserExists-->session userValidated: "+ userValidatedSessionValue);
+            //System.out.println("SignUp:checkUserExists--> Before Portal Redirect, Session id: "+application.getSessionStore().getOrCreateSessionId(playWebContext));
+
+            if(null!=userValidated && userValidated.equalsIgnoreCase("yes")) {
+                System.out.println("SignUp:checkUserExists->Redirecting to Portal, Ajax userValidated = "+userValidated+"\n");
+                //return ok ("/hadatac");
+                //return ok ("/hadatac").addingToSession(request ,"userValidated", "yes");
+            }
+            else if(null!=userValidatedSessionValue && userValidatedSessionValue.equalsIgnoreCase("yes")) {
+                System.out.println("SignUp:checkUserExists->Redirecting to Portal, userValidatedSessionValue = "+userValidatedSessionValue+"\n");
+                //return ok ("/hadatac");
+                //return ok ("/hadatac").addingToSession(request ,"userValidated", "yes");
+            }
+            /*else {
+                System.out.println("SignUp:checkUserExists->Redirecting to receiver, userValidated = "+userValidated+"\n");
+                String sessionId = application.getSessionStore().getOrCreateSessionId(playWebContext);
+                ObjectNode result = Json.newObject();
+                result.put("status", "OK");
+                result.put("userValidated", "yes");
+                result.put("sessionId", sessionId);
+                //return ok(result);
+            }*/
+
+            //return ok ("/hadatac");
+            String userEmail = application.getUserEmail(request);
+            return ok ("/hadatac").addingToSession(request ,"userValidated", "yes").addingToSession(request ,"userEmail", userEmail);
         }
         return badRequest("what happened?");
     }
@@ -397,5 +448,34 @@ public class Signup {
         //application.setSessionStore(playSessionStore);
         return playWebContext;
 
+    }
+
+    public Optional<String> getSessionParameter(Http.Request request, String param) {
+        return request
+                .session()
+                .get(param);
+    }
+
+
+    public String getJsonParam(Http.Request request, String param)
+    {
+        System.out.println("getting value: "+param);
+        String value = null;
+        JsonNode json = request.body().asJson();
+        if(json != null) {
+            System.out.println("found value: "+param);
+            value = json.findPath(param).textValue();
+        }
+        System.out.println("returning value: "+value);
+        return value;
+    }
+
+    public Map<String, String[]> getRequestParameters(Http.Request request) {
+        final Map<String, String[]> parameters = new HashMap<>();
+        final Map<String, String[]> urlParameters = request.queryString();
+        if (urlParameters != null) {
+            parameters.putAll(urlParameters);
+        }
+        return parameters;
     }
 }
