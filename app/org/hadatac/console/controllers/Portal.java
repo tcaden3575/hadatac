@@ -48,33 +48,26 @@ public class Portal extends Controller {
         String userEmail = (userEmailSessionValue.isPresent()) ? userEmailSessionValue.get() : null;
         System.out.println("Portal:index-->session userEmail: "+ userEmail);
 
-        //System.out.println("Portal:index->application.getUserEmail(request): "+application.getUserEmail(request)+"\n\n");
         //SysUser user = AuthApplication.getAuthApplication().getUserProvider().getUser(application.getUserEmail(request));
-        SysUser user = AuthApplication.getAuthApplication().getUserProvider().getUser(userEmail);
+        SysUser user = null;
+
+        if(userValidated.equalsIgnoreCase("yes")  && StringUtils.isNotBlank(userEmail))
+        {
+            user = AuthApplication.getAuthApplication().getUserProvider().getUser(userEmail);
+        }
+        else {
+            userEmail = application.getUserEmail(request);
+            user = AuthApplication.getAuthApplication().getUserProvider().getUser(userEmail);
+        }
         System.out.println("Portal:index->SysUser user is = "+user+"\n");
 
-        /*if(userValidated.equalsIgnoreCase("yes"))
-        {
-            //String email = application.getUserEmail(request);
-            System.out.println("Portal:index->application.getUserEmail(request): "+userEmail+"\n");
-            if(StringUtils.isNotBlank(userEmail)) {
-                System.out.println("Portal:index-> email: "+userEmail+"\n");
-                System.out.println("Portal:index->user is null = "+user+"\n");
-                System.out.println("Portal:index->redirecting to Portal page \n");
-                //return ok(portal.render(userEmail));
-            }
-            System.out.println("Portal:index-> email not found: "+userEmail+"\n");
-        }*/
-
         if (user == null) {
-            System.out.println("Portal:index->user is null = "+user+"\n");
-            System.out.println("Portal:index->application.getUserEmail(request)"+userEmail+"\n");
+            System.out.println("Portal:index->user is null \n");
             System.out.println("Portal:index->redirecting to Landing page \n");
             return ok(landingPage.render(userEmail));
             //return ok(landingPage.render(application.getUserEmail(request)));
         } else {
             System.out.println("Portal:index->user is not null = "+user.getEmail()+"\n\n");
-            System.out.println("Portal:index->application.getUserEmail(request)"+userEmail+"\n");
             System.out.println("Portal:index->redirecting to Portal page \n");
             return ok(portal.render(userEmail));
             //return ok(portal.render(application.getUserEmail(request)));

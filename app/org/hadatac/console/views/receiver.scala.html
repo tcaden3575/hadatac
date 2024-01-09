@@ -67,6 +67,10 @@
     <script type="text/javascript">
             let count =0;
             let Success = false;
+
+            //Set this for Production, (Dev = 2), (Prod = 3)
+            let RETRIES_LIMIT = 2;
+
             window.addEventListener('message', function (e) {
                 let obj = JSON.parse(e.data);
                 // console.log("inside script:"+e.origin);
@@ -77,7 +81,7 @@
                 obj.repeatPassword = obj.password;
                 count++;
 
-                if(count<2 && !Success && e.origin =="@ConfigFactory.load().getString("hadatac.ThirdPartyUser.oauth.origin")" && obj.appGuid =="@ConfigFactory.load().getString("hadatac.ThirdPartyUser.oauth.tokenUrl")")
+                if(count<RETRIES_LIMIT && !Success && e.origin =="@ConfigFactory.load().getString("hadatac.ThirdPartyUser.oauth.origin")" && obj.appGuid =="@ConfigFactory.load().getString("hadatac.ThirdPartyUser.oauth.tokenUrl")")
                 {
                     console.log("Establish Session count = " + count);
                     //alert("Establish Session count = " + count);
