@@ -59,6 +59,8 @@ public class MyUsernamePasswordAuthProvider implements MyAuthUserIdentity{
     private String studyId;
     private String studyIds;
 
+    private boolean initialConnection;
+
     private MessagesApi messagesApi;
     private Config config;
     MyService myService;
@@ -161,6 +163,13 @@ public class MyUsernamePasswordAuthProvider implements MyAuthUserIdentity{
     public void setStudyIds(String studyIds) {
         this.studyIds = studyIds;
     }
+
+    public boolean isInitialConnection() { return initialConnection; }
+
+    public void setInitialConnection(boolean initialConnection) {
+        this.initialConnection = initialConnection;
+    }
+
 
     public String validate() {
         if (password == null || !password.equals(repeatPassword)) {

@@ -4,8 +4,8 @@ import be.objectify.deadbolt.java.actions.SubjectNotPresent;
 import com.typesafe.config.ConfigFactory;
 import module.SecurityModule;
 import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.hadatac.Constants;
-import org.hadatac.console.controllers.dataacquisitionsearch.DataAcquisitionSearch;
 import org.hadatac.console.controllers.triplestore.UserManagement;
 import org.hadatac.console.models.*;
 import org.hadatac.console.providers.*;
@@ -335,22 +335,32 @@ public class Signup {
                 //Adding new user to manage Users
                 addUsertoManageUsers(request,data);
             }
+
             //Create profile for user trying to login
             final PlayWebContext playWebContext = createUserProfile(request,formData.get().getEmail());
-//            System.out.println("checkUserExists create user profile:"+userEmail+"\n application.getSessionStore()):"+application.getSessionStore().getOrCreateSessionId(playWebContext));
+            //System.out.println("SignUp:checkUserExists-->create user profile --> verifying: "+formData.get().getEmail()+"\n --->application.getSessionStore()):"+application.getSessionStore().getOrCreateSessionId(playWebContext));
 
             //Login user
-            System.out.println("Logging in user redirected from Third party: "+playSessionStore.getOrCreateSessionId(playWebContext));
+            System.out.println("Logging in user redirected from Third party, Session Id: "+application.getSessionStore().getOrCreateSessionId(playWebContext));
             SysUser user = SysUser.findByEmail(formData.get().getEmail());
+            //System.out.println("SignUp:checkUserExists-->user: "+ ((null==user) ? user : user.getId()));
             application.formIndex(request,user,playSessionStore,playWebContext);
 
-            Map params = request.queryString();
             //params.forEach((K,V) -> System.out.println(K + ", value : " + V));
             System.out.println("formData= " + formData);
 
             String source = formData.get().getSource();
             String studyIds = formData.get().getStudyId();
             String studyPageRef = formData.get().getStudyPageRef();
+
+            //SysUser sysUser = AuthApplication.getAuthApplication().getUserProvider().getUser(application.getUserEmail(request));
+            //System.out.println("SignUp:checkUserExists->SysUser sysUser is = "+ ((null==sysUser) ? sysUser : sysUser.getId())+"\n\n");
+
+            if(formData.get().isInitialConnection())
+            {
+                String userEmail = application.getUserEmail(request);
+                return ok ("/hadatac").addingToSession(request ,"userValidated", "yes").addingToSession(request ,"userEmail", userEmail);
+            }
 
             if(!StringUtil.isNullOrEmpty(source) && !StringUtil.isNullOrEmpty(studyPageRef) && source.equals("studypage")) {
                 studyPageRef = "/" +studyPageRef+"&source="+source;
@@ -364,7 +374,8 @@ public class Signup {
                 return ok (pageRef).addingToSession(request ,"userValidated", "yes");
             }
 
-            return ok ("/hadatac").addingToSession(request ,"userValidated", "yes");
+            String userEmail = application.getUserEmail(request);
+            return ok ("/hadatac").addingToSession(request ,"userValidated", "yes").addingToSession(request ,"userEmail", userEmail);
         }
         return badRequest("what happened?");
     }
@@ -408,7 +419,7 @@ public class Signup {
     private  PlayWebContext createUserProfile(Http.Request request, String userName){
         SimpleTestUsernamePasswordAuthenticator test = new SimpleTestUsernamePasswordAuthenticator();
         final CommonProfile profile = new CommonProfile();
-        final PlayWebContext playWebContext = new PlayWebContext(request, playSessionStore);
+        final PlayWebContext playWebContext = new PlayWebContext(request, application.getSessionStore());
         final ProfileManager<CommonProfile> profileManager = new ProfileManager(playWebContext);
         final SysUser sysUser = SysUser.findByEmailSolr(userName);
         profile.setId(sysUser.getEmail());
@@ -416,8 +427,8 @@ public class Signup {
         profile.setRoles(test.getUserRoles(sysUser));
         profile.setRemembered(true);
         profileManager.save(true, profile, true);
-//        System.out.println("createUserProfile->getSessionId():"+playSessionStore.getOrCreateSessionId(playWebContext)+"\n\n");
-        application.setSessionStore(playSessionStore);
+        System.out.println("SignUp:createUserProfile->getSessionId():"+application.getSessionStore().getOrCreateSessionId(playWebContext)+"\n\n");
+        //application.setSessionStore(playSessionStore);
         return playWebContext;
 
     }

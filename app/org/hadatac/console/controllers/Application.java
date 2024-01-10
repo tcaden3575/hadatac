@@ -333,11 +333,10 @@ public class Application extends Controller {
 
     public void formIndex(Http.Request request, SysUser sysUserValue, PlaySessionStore sessionStore, PlayWebContext webContext){
         sysUser = sysUserValue;
-        playSessionStore = sessionStore;
-        setSessionStore(sessionStore);
+        //playSessionStore = sessionStore;
+        //setSessionStore(sessionStore);
         setPlayWebContext(webContext);
-        formIndex(request);
-
+        //formIndex(request);
     }
     private SysUser getSysUser(){return sysUser;}
     private void setSysUser(SysUser sysUserNew){ sysUser=sysUserNew;}

@@ -1,5 +1,6 @@
 package org.hadatac.console.controllers;
 
+import org.apache.commons.lang.StringUtils;
 import org.hadatac.console.views.html.landingPage;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -12,6 +13,8 @@ import org.hadatac.console.models.SysUser;
 import org.hadatac.utils.Repository;
 
 import javax.inject.Inject;
+import java.util.Map;
+import java.util.Optional;
 
 public class Portal extends Controller {
     @Inject Application application;
@@ -36,15 +39,49 @@ public class Portal extends Controller {
                             + "The namespace store is set to be without quads. Ask Administrator for further information. "
                             + "</h4></div>")));
         }
-        SysUser user = AuthApplication.getAuthApplication().getUserProvider().getUser(application.getUserEmail(request));
+
+        //System.out.println("Portal: Starting ");
+        Optional<String> userValidatedSessionValue = getSessionParameters( request, "userValidated");
+        String userValidated = (userValidatedSessionValue.isPresent()) ? userValidatedSessionValue.get() : null;
+        //System.out.println("Portal:index-->session userValidated: "+ userValidated);
+
+        Optional<String> userEmailSessionValue = getSessionParameters( request, "userEmail");
+        String userEmail = (userEmailSessionValue.isPresent()) ? userEmailSessionValue.get() : null;
+        //System.out.println("Portal:index-->session userEmail: "+ userEmail);
+
+        //SysUser user = AuthApplication.getAuthApplication().getUserProvider().getUser(application.getUserEmail(request));
+        SysUser user = null;
+
+        if(userValidated!=null && userValidated.equalsIgnoreCase("yes")  && StringUtils.isNotBlank(userEmail))
+        {
+            user = AuthApplication.getAuthApplication().getUserProvider().getUser(userEmail);
+        }
+        else {
+            userEmail = application.getUserEmail(request);
+            user = AuthApplication.getAuthApplication().getUserProvider().getUser(userEmail);
+        }
+        //System.out.println("Portal:index->SysUser user is = "+user+"\n");
 
         if (user == null) {
-            return ok(landingPage.render(application.getUserEmail(request)));
+            //System.out.println("Portal:index->user is null \n");
+            //System.out.println("Portal:index->redirecting to Landing page \n");
+            return ok(landingPage.render(userEmail));
+            //return ok(landingPage.render(application.getUserEmail(request)));
         } else {
-            return ok(portal.render(application.getUserEmail(request)));
+            //System.out.println("Portal:index->user is not null = "+user.getEmail()+"\n\n");
+            //System.out.println("Portal:index->redirecting to Portal page \n");
+            return ok(portal.render(userEmail));
+            //return ok(portal.render(application.getUserEmail(request)));
         }
     }
 
     public Result postIndex(Http.Request request){
         return ok(portal.render(application.getUserEmail(request)));}
+
+
+    public Optional<String> getSessionParameters(Http.Request request, String param) {
+        return request
+                .session()
+                .get(param);
+    }
 }
