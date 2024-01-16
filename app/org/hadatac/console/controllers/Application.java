@@ -77,6 +77,34 @@ public class Application extends Controller {
         return (profileManager.getAll(true).isEmpty() ? null : profileManager.getAll(true).get(0));
     }
 
+    public PlayWebContext createProfile(Http.Request request, String userEmail)
+    {
+        final CommonProfile profile = new CommonProfile();
+        final PlayWebContext context = new PlayWebContext(request, playSessionStore);
+        final ProfileManager<CommonProfile> profileManager = new ProfileManager(context);
+        SysUser sysUser = SysUser.findByEmail(userEmail);
+        System.out.println("Application:createProfile-->sysUser: " + sysUser);
+        if (null != sysUser && null != sysUser.getEmail()) {
+            System.out.println("Application:createProfile-->sysUser.getEmail(): " + sysUser.getEmail());
+            profile.setId(sysUser.getEmail());
+            profile.addAttribute(Pac4jConstants.USERNAME, sysUser.getEmail());
+            profile.addAttribute("email", sysUser.getEmail());
+            profile.setRoles(getUserRoles(sysUser));
+            profile.setRemembered(true);
+
+            context.getSessionStore().set(context, Pac4jConstants.USER_PROFILES, Optional.of(profile));
+            //profileManager.save(true, profile, true);
+
+            Optional<CommonProfile> userProfile = context.getSessionStore().get(context, Pac4jConstants.USER_PROFILES);
+            if(userProfile.isPresent()) {
+                System.out.println("Application:createProfile-->updateSession: " + userProfile.get());
+            }
+            //context.getSessionStore().set(context, Pac4jConstants.USERNAME, sysUser.getEmail());
+            //context.getSessionStore().set(context, "email", sysUser.getEmail());
+        }
+        return context;
+    }
+
     public String getSessionId (Http.Request request){
         final PlayWebContext context = new PlayWebContext(request, playSessionStore);
         final String sessionId = context.getSessionStore().getOrCreateSessionId(context);
@@ -86,10 +114,12 @@ public class Application extends Controller {
 
     public String getUserEmail(Http.Request request) {
         if("true".equalsIgnoreCase(ConfigFactory.load().getString("hadatac.ThirdPartyUser.userRedirection"))){
-            final PlayWebContext context = getPlayWebContext()!=null? getPlayWebContext():new PlayWebContext(request, playSessionStore);
-            final ProfileManager<CommonProfile> profileManager = new ProfileManager(context,playSessionStore);
-            final String userEmail =  profileManager.get(true).isEmpty() ? "": profileManager.get(true).get().getUsername();
-            System.out.println("getUserEmail:"+userEmail+"\n sessionId:"+playSessionStore.getOrCreateSessionId(context));
+            //final PlayWebContext context = getPlayWebContext()!=null? getPlayWebContext():new PlayWebContext(request, playSessionStore);
+            //final ProfileManager<CommonProfile> profileManager = new ProfileManager(context,playSessionStore);
+            //final String userEmail =  profileManager.get(true).isEmpty() ? "": profileManager.get(true).get().getUsername();
+
+            final String userEmail = (getProfile(request) == null) ? "" : getProfile(request).getUsername();
+            //System.out.println("getUserEmail:"+userEmail+"\n sessionId:"+playSessionStore.getOrCreateSessionId(context));
             return userEmail;
         }
         final String userEmail = (getProfile(request) == null) ? "" : getProfile(request).getUsername();

@@ -337,7 +337,8 @@ public class Signup {
             }
 
             //Create profile for user trying to login
-            final PlayWebContext playWebContext = createUserProfile(request,formData.get().getEmail());
+            //final PlayWebContext playWebContext = createUserProfile(request,formData.get().getEmail());
+            final PlayWebContext playWebContext = application.createProfile(request,formData.get().getEmail());
             //System.out.println("SignUp:checkUserExists-->create user profile --> verifying: "+formData.get().getEmail()+"\n --->application.getSessionStore()):"+application.getSessionStore().getOrCreateSessionId(playWebContext));
 
             //Login user

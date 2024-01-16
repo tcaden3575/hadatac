@@ -52,7 +52,7 @@ public class Portal extends Controller {
         //SysUser user = AuthApplication.getAuthApplication().getUserProvider().getUser(application.getUserEmail(request));
         SysUser user = null;
 
-        if(userValidated!=null && userValidated.equalsIgnoreCase("yes")  && StringUtils.isNotBlank(userEmail))
+        /*if(userValidated!=null && userValidated.equalsIgnoreCase("yes")  && StringUtils.isNotBlank(userEmail))
         {
             user = AuthApplication.getAuthApplication().getUserProvider().getUser(userEmail);
         }
@@ -60,7 +60,10 @@ public class Portal extends Controller {
             userEmail = application.getUserEmail(request);
             user = AuthApplication.getAuthApplication().getUserProvider().getUser(userEmail);
         }
-        //System.out.println("Portal:index->SysUser user is = "+user+"\n");
+        System.out.println("Portal:index->SysUser user is = "+user+"\n");*/
+
+        user = AuthApplication.getAuthApplication().getUserProvider().getUser(application.getUserEmail(request));
+        System.out.println("Portal:index->SysUser user is = "+user+"\n");
 
         if (user == null) {
             //System.out.println("Portal:index->user is null \n");

@@ -55,9 +55,9 @@ public class StudyView extends Controller {
     Application application;
     public static int PAGESIZE = 7;
 
-    @Secure(authorizers = Constants.DATA_OWNER_ROLE)
+    //@Secure(authorizers = Constants.DATA_OWNER_ROLE)
     public Result index(String study_uri, String oc_uri, int page, Http.Request request) {
-
+        System.out.println("Inside StudyView @Secure(authorizers = Constants.DATA_OWNER_ROLE): [" + study_uri + "]");
         if (oc_uri != null && oc_uri.indexOf("STD-") > -1) {
             oc_uri = "";
         }
@@ -128,7 +128,7 @@ public class StudyView extends Controller {
                 source, studyIds, shinyAppUrl.toString()));
     }
 
-    @Secure(authorizers = Constants.DATA_OWNER_ROLE)
+    //@Secure(authorizers = Constants.DATA_OWNER_ROLE)
     public Result postIndex(String study_uri, String oc_uri, int page, Http.Request request) {
         return index(study_uri, oc_uri, page, request);
     }
